@@ -35,7 +35,8 @@ class Database {
 
   initTables() {
     // Table des utilisateurs
-    this.db.run(`
+    this.db.run(
+      `
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         nom TEXT NOT NULL,
@@ -44,10 +45,19 @@ class Database {
         dateInscription DATETIME DEFAULT CURRENT_TIMESTAMP,
         actif BOOLEAN DEFAULT 1
       )
-    `);
+    `,
+      (err) => {
+        if (err) {
+          console.error("Erreur création table users:", err);
+        } else {
+          console.log("Table users créée avec succès");
+        }
+      }
+    );
 
     // Table des livres
-    this.db.run(`
+    this.db.run(
+      `
       CREATE TABLE IF NOT EXISTS books (
         id TEXT PRIMARY KEY,
         titre TEXT NOT NULL,
@@ -59,10 +69,19 @@ class Database {
         nombreExemplaires INTEGER DEFAULT 1,
         dateAjout DATETIME DEFAULT CURRENT_TIMESTAMP
       )
-    `);
+    `,
+      (err) => {
+        if (err) {
+          console.error("Erreur création table books:", err);
+        } else {
+          console.log("Table books créée avec succès");
+        }
+      }
+    );
 
     // Table des emprunts
-    this.db.run(`
+    this.db.run(
+      `
       CREATE TABLE IF NOT EXISTS emprunts (
         id TEXT PRIMARY KEY,
         userId TEXT NOT NULL,
@@ -74,13 +93,22 @@ class Database {
         FOREIGN KEY (userId) REFERENCES users (id),
         FOREIGN KEY (bookId) REFERENCES books (id)
       )
-    `);
-
-    // Insérer des données de test
-    this.insertSampleData();
+    `,
+      (err) => {
+        if (err) {
+          console.error("Erreur création table emprunts:", err);
+        } else {
+          console.log("Table emprunts créée avec succès");
+          // Insérer des données de test après la création de toutes les tables
+          setTimeout(() => this.insertSampleData(), 100);
+        }
+      }
+    );
   }
 
   insertSampleData() {
+    console.log("Insertion des données de test...");
+
     // Utilisateurs de test
     const users = [
       {
@@ -118,14 +146,28 @@ class Database {
     users.forEach((user) => {
       this.db.run(
         "INSERT OR IGNORE INTO users (id, nom, prenom, email) VALUES (?, ?, ?, ?)",
-        [user.id, user.nom, user.prenom, user.email]
+        [user.id, user.nom, user.prenom, user.email],
+        (err) => {
+          if (err) {
+            console.error("Erreur insertion utilisateur:", err);
+          } else {
+            console.log(`Utilisateur ${user.nom} ${user.prenom} inséré`);
+          }
+        }
       );
     });
 
     books.forEach((book) => {
       this.db.run(
         "INSERT OR IGNORE INTO books (id, titre, auteur, isbn, genre) VALUES (?, ?, ?, ?, ?)",
-        [book.id, book.titre, book.auteur, book.isbn, book.genre]
+        [book.id, book.titre, book.auteur, book.isbn, book.genre],
+        (err) => {
+          if (err) {
+            console.error("Erreur insertion livre:", err);
+          } else {
+            console.log(`Livre "${book.titre}" inséré`);
+          }
+        }
       );
     });
   }
@@ -360,28 +402,51 @@ const swaggerDocument = {
 
 // Route de base - redirige vers la documentation (page par défaut)
 app.get("/", (req, res) => {
+  console.log("Route / appelée - redirection vers /api-docs");
   res.redirect("/api-docs");
 });
 
 // Documentation Swagger - Page par défaut
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerDocument, {
-    explorer: true,
-    customCss: `
-      .swagger-ui .topbar { display: none }
-      .swagger-ui .info { margin: 20px 0; }
-      .swagger-ui .info .title { color: #3b82f6; }
-    `,
-    customSiteTitle: "API Bibliothèque - Documentation",
-    swaggerOptions: {
-      docExpansion: "list",
-      filter: true,
-      showRequestHeaders: false,
-    },
-  })
-);
+try {
+  app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerDocument, {
+      explorer: true,
+      customCss: `
+        .swagger-ui .topbar { display: none }
+        .swagger-ui .info { margin: 20px 0; }
+        .swagger-ui .info .title { color: #3b82f6; }
+      `,
+      customSiteTitle: "API Bibliothèque - Documentation",
+      swaggerOptions: {
+        docExpansion: "list",
+        filter: true,
+        showRequestHeaders: false,
+      },
+    })
+  );
+  console.log("Swagger UI configuré avec succès");
+} catch (error) {
+  console.error("Erreur lors de la configuration de Swagger UI:", error);
+
+  // Fallback si Swagger UI ne fonctionne pas
+  app.get("/api-docs", (req, res) => {
+    res.json({
+      error: "Documentation Swagger non disponible",
+      message: "La documentation Swagger n'a pas pu être chargée",
+      fallback_info: {
+        api_info: "/api",
+        health: "/health",
+        endpoints: {
+          users: "/api/users",
+          books: "/api/books",
+          emprunts: "/api/emprunts",
+        },
+      },
+    });
+  });
+}
 
 // Route de santé
 app.get("/health", (req, res) => {
@@ -395,18 +460,53 @@ app.get("/health", (req, res) => {
   });
 });
 
+// Route de diagnostic pour Vercel
+app.get("/debug", async (req, res) => {
+  try {
+    // Test de la base de données
+    const userCount = await database.get("SELECT COUNT(*) as count FROM users");
+    const bookCount = await database.get("SELECT COUNT(*) as count FROM books");
+
+    res.json({
+      status: "debug",
+      timestamp: new Date().toISOString(),
+      database: {
+        users: userCount?.count || 0,
+        books: bookCount?.count || 0,
+        connection: "OK",
+      },
+      environment: {
+        node_version: process.version,
+        platform: process.platform,
+        memory: process.memoryUsage(),
+        uptime: process.uptime(),
+      },
+      routes: {
+        root: "Redirection vers /api-docs",
+        api_docs: "Documentation Swagger",
+        health: "Health check",
+        api: "Informations générales",
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
 // Routes API - Utilisateurs
 app.get("/api/users", async (req, res) => {
   try {
     const users = await database.all("SELECT * FROM users WHERE actif = 1");
     res.json(users);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        error: "Erreur lors de la récupération des utilisateurs",
-        message: error.message,
-      });
+    res.status(500).json({
+      error: "Erreur lors de la récupération des utilisateurs",
+      message: error.message,
+    });
   }
 });
 
@@ -433,12 +533,10 @@ app.post("/api/users", async (req, res) => {
         .status(409)
         .json({ error: "Un utilisateur avec cet email existe déjà" });
     } else {
-      res
-        .status(500)
-        .json({
-          error: "Erreur lors de la création de l'utilisateur",
-          message: error.message,
-        });
+      res.status(500).json({
+        error: "Erreur lors de la création de l'utilisateur",
+        message: error.message,
+      });
     }
   }
 });
@@ -454,12 +552,10 @@ app.get("/api/users/:id", async (req, res) => {
     }
     res.json(user);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        error: "Erreur lors de la récupération de l'utilisateur",
-        message: error.message,
-      });
+    res.status(500).json({
+      error: "Erreur lors de la récupération de l'utilisateur",
+      message: error.message,
+    });
   }
 });
 
@@ -469,12 +565,10 @@ app.get("/api/books", async (req, res) => {
     const books = await database.all("SELECT * FROM books");
     res.json(books);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        error: "Erreur lors de la récupération des livres",
-        message: error.message,
-      });
+    res.status(500).json({
+      error: "Erreur lors de la récupération des livres",
+      message: error.message,
+    });
   }
 });
 
@@ -497,12 +591,10 @@ app.post("/api/books", async (req, res) => {
     if (error.message.includes("UNIQUE constraint failed")) {
       res.status(409).json({ error: "Un livre avec cet ISBN existe déjà" });
     } else {
-      res
-        .status(500)
-        .json({
-          error: "Erreur lors de la création du livre",
-          message: error.message,
-        });
+      res.status(500).json({
+        error: "Erreur lors de la création du livre",
+        message: error.message,
+      });
     }
   }
 });
@@ -517,12 +609,10 @@ app.get("/api/books/:id", async (req, res) => {
     }
     res.json(book);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        error: "Erreur lors de la récupération du livre",
-        message: error.message,
-      });
+    res.status(500).json({
+      error: "Erreur lors de la récupération du livre",
+      message: error.message,
+    });
   }
 });
 
@@ -538,12 +628,10 @@ app.get("/api/emprunts", async (req, res) => {
     `);
     res.json(emprunts);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        error: "Erreur lors de la récupération des emprunts",
-        message: error.message,
-      });
+    res.status(500).json({
+      error: "Erreur lors de la récupération des emprunts",
+      message: error.message,
+    });
   }
 });
 
@@ -600,12 +688,10 @@ app.post("/api/emprunts", async (req, res) => {
 
     res.status(201).json(emprunt);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        error: "Erreur lors de la création de l'emprunt",
-        message: error.message,
-      });
+    res.status(500).json({
+      error: "Erreur lors de la création de l'emprunt",
+      message: error.message,
+    });
   }
 });
 
