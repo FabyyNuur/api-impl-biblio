@@ -1,0 +1,10 @@
+src/
+tests/
+*.md
+.git/
+.gitignore
+tsconfig.json
+tsconfig.build.json
+jest.config.js
+nodemon.json
+bibliotheque.db
