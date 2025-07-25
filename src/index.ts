@@ -23,18 +23,9 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, {
   customSiteTitle: 'API Bibliothèque - Documentation'
 }));
 
-// Route de base
+// Route de base - redirige vers la documentation
 app.get('/', (req, res) => {
-  res.json({
-    message: 'Bienvenue dans l\'API de gestion de bibliothèque',
-    version: '1.0.0',
-    documentation: '/api-docs',
-    endpoints: {
-      users: '/api/users',
-      books: '/api/books',
-      emprunts: '/api/emprunts'
-    }
-  });
+  res.redirect('/api-docs');
 });
 
 // Route pour vérifier la santé de l'API
