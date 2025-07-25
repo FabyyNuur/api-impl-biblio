@@ -31,6 +31,7 @@ export class Database {
           isbn TEXT UNIQUE NOT NULL,
           anneePublication INTEGER NOT NULL,
           genre TEXT NOT NULL,
+          description TEXT NOT NULL DEFAULT '',
           disponible BOOLEAN DEFAULT 1,
           dateAjout DATETIME DEFAULT CURRENT_TIMESTAMP
         )
@@ -50,6 +51,17 @@ export class Database {
           FOREIGN KEY (livreId) REFERENCES books (id)
         )
       `);
+
+      // Migration : Ajouter la colonne description si elle n'existe pas
+      try {
+        await this.run(`ALTER TABLE books ADD COLUMN description TEXT NOT NULL DEFAULT ''`);
+        console.log('Colonne description ajoutée à la table books');
+      } catch (error: any) {
+        // La colonne existe déjà, c'est normal
+        if (!error.message.includes('duplicate column name')) {
+          console.error('Erreur lors de l\'ajout de la colonne description:', error);
+        }
+      }
 
       console.log('Tables de la base de données initialisées avec succès');
     } catch (error) {
