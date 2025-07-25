@@ -5,35 +5,6 @@ import { CreateEmpruntRequest } from '../models/Emprunt';
 export class EmpruntController {
   private empruntService = new EmpruntService();
 
-  /**
-   * @swagger
-   * /api/emprunts:
-   *   post:
-   *     summary: Emprunter un livre
-   *     tags: [Emprunts]
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         application/json:
-   *           schema:
-   *             type: object
-   *             required:
-   *               - utilisateurId
-   *               - livreId
-   *             properties:
-   *               utilisateurId:
-   *                 type: string
-   *               livreId:
-   *                 type: string
-   *               dureeEmprunt:
-   *                 type: integer
-   *                 description: Durée en jours (défaut 14)
-   *     responses:
-   *       201:
-   *         description: Emprunt créé avec succès
-   *       400:
-   *         description: Données invalides ou livre non disponible
-   */
   async createEmprunt(req: Request, res: Response): Promise<void> {
     try {
       const empruntData: CreateEmpruntRequest = req.body;
@@ -66,27 +37,6 @@ export class EmpruntController {
     }
   }
 
-  /**
-   * @swagger
-   * /api/emprunts/{id}/retour:
-   *   patch:
-   *     summary: Retourner un livre
-   *     tags: [Emprunts]
-   *     parameters:
-   *       - in: path
-   *         name: id
-   *         required: true
-   *         schema:
-   *           type: string
-   *         description: ID de l'emprunt
-   *     responses:
-   *       200:
-   *         description: Livre retourné avec succès
-   *       404:
-   *         description: Emprunt non trouvé
-   *       400:
-   *         description: L'emprunt n'est pas en cours
-   */
   async returnBook(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
@@ -111,22 +61,6 @@ export class EmpruntController {
     }
   }
 
-  /**
-   * @swagger
-   * /api/users/{userId}/emprunts:
-   *   get:
-   *     summary: Lister les emprunts d'un utilisateur
-   *     tags: [Emprunts]
-   *     parameters:
-   *       - in: path
-   *         name: userId
-   *         required: true
-   *         schema:
-   *           type: string
-   *     responses:
-   *       200:
-   *         description: Liste des emprunts de l'utilisateur
-   */
   async getEmpruntsByUserId(req: Request, res: Response): Promise<void> {
     try {
       const { userId } = req.params;
@@ -140,16 +74,6 @@ export class EmpruntController {
     }
   }
 
-  /**
-   * @swagger
-   * /api/emprunts/en-cours:
-   *   get:
-   *     summary: Lister tous les emprunts en cours
-   *     tags: [Emprunts]
-   *     responses:
-   *       200:
-   *         description: Liste des emprunts en cours
-   */
   async getAllEmpruntsEnCours(req: Request, res: Response): Promise<void> {
     try {
       const emprunts = await this.empruntService.getAllEmpruntsEnCours();
@@ -162,16 +86,6 @@ export class EmpruntController {
     }
   }
 
-  /**
-   * @swagger
-   * /api/emprunts/en-retard:
-   *   get:
-   *     summary: Lister tous les emprunts en retard
-   *     tags: [Emprunts]
-   *     responses:
-   *       200:
-   *         description: Liste des emprunts en retard
-   */
   async getEmpruntsEnRetard(req: Request, res: Response): Promise<void> {
     try {
       const emprunts = await this.empruntService.getEmpruntsEnRetard();
@@ -184,24 +98,6 @@ export class EmpruntController {
     }
   }
 
-  /**
-   * @swagger
-   * /api/emprunts/{id}:
-   *   get:
-   *     summary: Récupérer un emprunt par ID
-   *     tags: [Emprunts]
-   *     parameters:
-   *       - in: path
-   *         name: id
-   *         required: true
-   *         schema:
-   *           type: string
-   *     responses:
-   *       200:
-   *         description: Emprunt trouvé
-   *       404:
-   *         description: Emprunt non trouvé
-   */
   async getEmpruntById(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;

@@ -1,226 +1,226 @@
-# API RESTful - Gestion de Bibliothèque
+# API de Gestion de Bibliothèque
 
-## Description
+Une API REST complète pour la gestion d'une bibliothèque développée avec Node.js, TypeScript, Express et SQLite.
 
-Cette API RESTful permet de gérer une bibliothèque simple avec la gestion des utilisateurs, des livres et des emprunts. Elle a été développée dans le cadre du TP 1 sur les API REST.
+## Objectif
 
-## Fonctionnalités
+Cette API permet de gérer l'ensemble des opérations d'une bibliothèque : gestion des utilisateurs, catalogue de livres, et système d'emprunts avec suivi complet.
 
-### Utilisateurs
-- ✅ Créer un utilisateur
-- ✅ Récupérer un utilisateur par ID
-- ✅ Lister tous les utilisateurs
-- ✅ Modifier les informations d'un utilisateur
-- ✅ Supprimer un utilisateur
+## ⚡ Fonctionnalités Principales
 
-### Livres
-- ✅ Créer un livre
-- ✅ Récupérer un livre par ID
-- ✅ Lister tous les livres
-- ✅ Modifier les informations d'un livre
-- ✅ Supprimer un livre
-- ✅ Rechercher des livres
-- ✅ Filtrer les livres disponibles
+### Gestion des Utilisateurs
 
-### Emprunts
-- ✅ Emprunter un livre
-- ✅ Retourner un livre
-- ✅ Lister les emprunts d'un utilisateur
-- ✅ Lister tous les emprunts en cours
-- ✅ Lister les emprunts en retard
+- Inscription et gestion des profils utilisateurs
+- Activation/désactivation des comptes
+- Consultation des informations personnelles
 
-## Installation et Configuration
+### Gestion du Catalogue de Livres
+
+- Ajout, modification et suppression de livres
+- Recherche avancée (titre, auteur, genre, description, ISBN)
+- Consultation des livres disponibles
+- Gestion des descriptions détaillées
+
+### Système d'Emprunts
+
+- Emprunt de livres avec durée personnalisable
+- Retour de livres avec suivi automatique
+- Historique complet des emprunts par utilisateur
+- Gestion des emprunts en retard
+- Vérification de disponibilité automatique
+
+## Technologies Utilisées
+
+- **Backend :** Node.js + TypeScript
+- **Framework :** Express.js
+- **Base de données :** SQLite
+- **Documentation :** Swagger/OpenAPI
+- **Tests :** Jest
+- **Outils :** Nodemon, UUID
+
+## Démarrage Rapide
 
 ### Prérequis
-- Node.js (version 18 ou supérieure)
+
+- Node.js (v16 ou plus)
 - npm ou yarn
 
 ### Installation
+
 ```bash
-# Cloner le repository
+# Cloner le projet
 git clone <votre-repo>
 cd api-impl
 
 # Installer les dépendances
 npm install
 
-# Compiler le TypeScript
-npm run build
-```
-
-### Démarrage
-```bash
-# Mode développement (avec rechargement automatique)
+# Démarrer en mode développement
 npm run dev
-
-# Mode production
-npm start
 ```
 
-L'API sera accessible sur `http://localhost:3000`
+### Premier accès
 
-## Documentation
+Une fois démarré, l'API est accessible sur :
 
-La documentation interactive de l'API est disponible via Swagger UI :
-- **URL** : `http://localhost:3000/api-docs`
-- **Format** : OpenAPI 3.0
+- **URL principale :** http://localhost:3000 (redirige vers la documentation)
+- **Documentation Swagger :** http://localhost:3000/api-docs
+- **Health Check :** http://localhost:3000/health
 
-## Structure du Projet
-
-```
-src/
-├── config/          # Configuration (base de données, Swagger)
-├── controllers/     # Contrôleurs REST
-├── models/          # Modèles de données TypeScript
-├── routes/          # Définition des routes
-├── services/        # Logique métier
-└── index.ts         # Point d'entrée de l'application
-
-tests/               # Tests unitaires
-├── setup.ts         # Configuration des tests
-└── *.test.ts        # Fichiers de tests
-
-dist/                # Code compilé (généré)
-```
-
-## API Endpoints
+## Endpoints Principaux
 
 ### Utilisateurs
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| POST | `/api/users` | Créer un utilisateur |
-| GET | `/api/users` | Lister tous les utilisateurs |
-| GET | `/api/users/:id` | Récupérer un utilisateur |
-| PUT | `/api/users/:id` | Modifier un utilisateur |
-| DELETE | `/api/users/:id` | Supprimer un utilisateur |
+
+- `POST /api/users` - Créer un utilisateur
+- `GET /api/users` - Lister tous les utilisateurs
+- `GET /api/users/{id}` - Consulter un utilisateur
+- `PUT /api/users/{id}` - Modifier un utilisateur
+- `DELETE /api/users/{id}` - Supprimer un utilisateur
 
 ### Livres
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| POST | `/api/books` | Créer un livre |
-| GET | `/api/books` | Lister tous les livres |
-| GET | `/api/books?disponible=true` | Lister les livres disponibles |
-| GET | `/api/books?search=query` | Rechercher des livres |
-| GET | `/api/books/:id` | Récupérer un livre |
-| PUT | `/api/books/:id` | Modifier un livre |
-| DELETE | `/api/books/:id` | Supprimer un livre |
+
+- `POST /api/books` - Ajouter un livre
+- `GET /api/books` - Lister tous les livres
+- `GET /api/books/available` - Livres disponibles
+- `GET /api/books/{id}` - Consulter un livre
+- `PUT /api/books/{id}` - Modifier un livre
+- `DELETE /api/books/{id}` - Supprimer un livre
+- `GET /api/books/search?q={query}` - Rechercher des livres
 
 ### Emprunts
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| POST | `/api/emprunts` | Emprunter un livre |
-| GET | `/api/emprunts/en-cours` | Lister les emprunts en cours |
-| GET | `/api/emprunts/en-retard` | Lister les emprunts en retard |
-| GET | `/api/emprunts/:id` | Récupérer un emprunt |
-| PATCH | `/api/emprunts/:id/retour` | Retourner un livre |
-| GET | `/api/users/:userId/emprunts` | Emprunts d'un utilisateur |
 
-## Exemples d'utilisation
+- `POST /api/emprunts` - Emprunter un livre
+- `PATCH /api/emprunts/{id}/retour` - Retourner un livre
+- `GET /api/users/{userId}/emprunts` - Historique d'un utilisateur
+- `GET /api/emprunts/en-cours` - Emprunts actuels
+- `GET /api/emprunts/en-retard` - Emprunts en retard
+- `GET /api/emprunts/{id}` - Détails d'un emprunt
 
-### Créer un utilisateur
-```bash
-curl -X POST http://localhost:3000/api/users \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "nom": "Dupont",
-    "prenom": "Jean",
-    "email": "jean.dupont@example.com"
-  }'
-```
+## Structure de la Base de Données
 
-### Créer un livre
-```bash
-curl -X POST http://localhost:3000/api/books \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "titre": "Le Petit Prince",
-    "auteur": "Antoine de Saint-Exupéry",
-    "isbn": "9782070408504",
-    "anneePublication": 1943,
-    "genre": "Fiction"
-  }'
-```
+### Table `users`
 
-### Emprunter un livre
-```bash
-curl -X POST http://localhost:3000/api/emprunts \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "utilisateurId": "user-id-here",
-    "livreId": "book-id-here",
-    "dureeEmprunt": 14
-  }'
-```
+- Informations personnelles (nom, prénom, email)
+- Statut d'activation
+- Date d'inscription
 
-## Base de Données
+### Table `books`
 
-L'application utilise SQLite comme base de données avec les tables suivantes :
+- Métadonnées (titre, auteur, ISBN, année, genre)
+- Description détaillée
+- Statut de disponibilité
+- Date d'ajout
 
-- **users** : Informations des utilisateurs
-- **books** : Catalogue des livres
-- **emprunts** : Gestion des emprunts
+### Table `emprunts`
 
-La base de données est automatiquement créée au démarrage de l'application.
+- Liens utilisateur-livre
+- Dates d'emprunt et de retour (prévue/effective)
+- Statut (EN_COURS, RETOURNE, EN_RETARD)
+- Historique complet conservé
 
-## Tests
+## Modèles de Données
 
-```bash
-# Exécuter tous les tests
-npm test
-
-# Exécuter les tests avec couverture
-npm run test:coverage
-
-# Exécuter les tests en mode watch
-npm run test:watch
-```
-
-## Codes de Statut HTTP
-
-| Code | Description |
-|------|-------------|
-| 200 | Succès |
-| 201 | Créé avec succès |
-| 204 | Supprimé avec succès |
-| 400 | Données invalides |
-| 404 | Ressource non trouvée |
-| 409 | Conflit (email/ISBN déjà utilisé) |
-| 500 | Erreur interne du serveur |
-
-## Gestion des Erreurs
-
-L'API retourne des erreurs structurées :
+### Utilisateur
 
 ```json
 {
-  "error": "Message d'erreur principal",
-  "details": "Détails techniques (en mode développement uniquement)"
+  "id": "uuid",
+  "nom": "string",
+  "prenom": "string", 
+  "email": "string",
+  "dateInscription": "datetime",
+  "actif": "boolean"
+}
+```
+
+### Livre
+
+```json
+{
+  "id": "uuid",
+  "titre": "string",
+  "auteur": "string",
+  "isbn": "string",
+  "anneePublication": "number",
+  "genre": "string",
+  "description": "string",
+  "disponible": "boolean",
+  "dateAjout": "datetime"
+}
+```
+
+### Emprunt
+
+```json
+{
+  "id": "uuid",
+  "utilisateurId": "uuid",
+  "livreId": "uuid",
+  "dateEmprunt": "datetime",
+  "dateRetourPrevu": "datetime",
+  "dateRetourEffectif": "datetime?",
+  "statut": "EN_COURS|RETOURNE|EN_RETARD"
 }
 ```
 
 ## Règles Métier
 
+### Emprunts
+
 - Un utilisateur ne peut pas emprunter le même livre deux fois simultanément
-- Un livre emprunté n'est plus disponible pour d'autres emprunts
-- Les emprunts ont une durée par défaut de 14 jours
-- Un utilisateur/livre ne peut pas être supprimé s'il a des emprunts en cours
-- Les emprunts en retard sont automatiquement détectés
+- Les livres indisponibles ne peuvent pas être empruntés
+- Les utilisateurs inactifs ne peuvent pas emprunter
+- Durée d'emprunt par défaut : 14 jours
+- Les emprunts en cours bloquent la suppression des livres
 
-## Sécurité
+### Utilisateurs
 
-- Validation des données d'entrée
-- Gestion des erreurs sans exposition des détails techniques en production
-- Protection contre les injections SQL via les requêtes préparées
+- Email unique obligatoire
+- Suppression impossible s'il y a des emprunts en cours
 
-## Améliorations Futures
+## Tests
 
-- [ ] Authentification et autorisation
-- [ ] Pagination pour les listes
-- [ ] Cache pour améliorer les performances
-- [ ] Logs structurés
-- [ ] Notifications pour les retards
-- [ ] Interface web d'administration
+```bash
+# Lancer les tests
+npm test
 
-## Support
+# Tests en mode watch
+npm run test:watch
 
-Pour toute question ou problème, consultez la documentation Swagger ou contactez l'équipe de développement.
+# Coverage
+npm run test:coverage
+```
+
+## Scripts Disponibles
+
+- `npm run dev` - Développement avec auto-reload
+- `npm run build` - Construction pour production
+- `npm start` - Démarrage en production
+- `npm test` - Exécution des tests
+- `npm run lint` - Vérification du code
+
+## Architecture
+
+```
+src/
+├── config/          # Configuration (DB, Swagger)
+├── controllers/     # Contrôleurs HTTP
+├── models/          # Interfaces TypeScript
+├── routes/          # Définition des routes
+├── services/        # Logique métier
+└── index.ts         # Point d'entrée
+
+tests/               # Tests unitaires
+```
+
+## Contribution
+
+1. Fork le projet
+2. Créer une branche feature (`git checkout -b feature/nouvelle-fonctionnalite`)
+3. Commit (`git commit -am 'Ajout nouvelle fonctionnalité'`)
+4. Push (`git push origin feature/nouvelle-fonctionnalite`)
+5. Créer une Pull Request
+
+---
+
+*Développé avec ❤️ par Faabynuur pour la gestion moderne de bibliothèques*
