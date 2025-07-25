@@ -55,12 +55,14 @@ app.use('*', (req, res) => {
   });
 });
 
-// Démarrage du serveur
-app.listen(PORT, () => {
-  console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
-  console.log(`📚 Documentation API disponible sur http://localhost:${PORT}/api-docs`);
-  console.log(`🔍 Health check sur http://localhost:${PORT}/health`);
-});
+// Démarrage du serveur seulement si ce n'est pas dans un environnement serverless
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
+    console.log(`📚 Documentation API disponible sur http://localhost:${PORT}/api-docs`);
+    console.log(`🔍 Health check sur http://localhost:${PORT}/health`);
+  });
+}
 
 // Gestion de l'arrêt propre
 process.on('SIGINT', () => {

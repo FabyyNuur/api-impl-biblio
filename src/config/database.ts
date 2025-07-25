@@ -4,7 +4,11 @@ export class Database {
   private db: sqlite3.Database;
 
   constructor(dbPath: string = 'bibliotheque.db') {
-    this.db = new sqlite3.Database(dbPath);
+    // Utiliser une base de données en mémoire sur Vercel
+    const isVercel = process.env.VERCEL === '1';
+    const finalDbPath = isVercel ? ':memory:' : dbPath;
+    
+    this.db = new sqlite3.Database(finalDbPath);
     this.initTables();
   }
 
