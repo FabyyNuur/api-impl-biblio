@@ -6,8 +6,7 @@
   "scripts": {
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
-    "build": "tsc -p tsconfig.build.json",
-    "vercel-build": "npm run build",
+    "build": "echo 'No build needed for Vercel'",
     "test": "jest"
   },
   "keywords": [
