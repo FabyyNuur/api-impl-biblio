@@ -8,9 +8,9 @@ export class BookService {
     const dateAjout = new Date();
 
     await database.run(
-      `INSERT INTO books (id, titre, auteur, isbn, anneePublication, genre, description, disponible, dateAjout) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, bookData.titre, bookData.auteur, bookData.isbn, bookData.anneePublication, bookData.genre, bookData.description, 1, dateAjout.toISOString()]
+      `INSERT INTO books (id, titre, auteur, isbn, anneePublication, genre, disponible, dateAjout) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, bookData.titre, bookData.auteur, bookData.isbn, bookData.anneePublication, bookData.genre, 1, dateAjout.toISOString()]
     );
 
     return {
@@ -20,7 +20,6 @@ export class BookService {
       isbn: bookData.isbn,
       anneePublication: bookData.anneePublication,
       genre: bookData.genre,
-      description: bookData.description,
       disponible: true,
       dateAjout
     };
@@ -40,7 +39,6 @@ export class BookService {
       isbn: row.isbn,
       anneePublication: row.anneePublication,
       genre: row.genre,
-      description: row.description || '',
       disponible: Boolean(row.disponible),
       dateAjout: new Date(row.dateAjout)
     };
@@ -56,7 +54,6 @@ export class BookService {
       isbn: row.isbn,
       anneePublication: row.anneePublication,
       genre: row.genre,
-      description: row.description || '',
       disponible: Boolean(row.disponible),
       dateAjout: new Date(row.dateAjout)
     }));
@@ -72,7 +69,6 @@ export class BookService {
       isbn: row.isbn,
       anneePublication: row.anneePublication,
       genre: row.genre,
-      description: row.description || '',
       disponible: Boolean(row.disponible),
       dateAjout: new Date(row.dateAjout)
     }));
@@ -106,10 +102,6 @@ export class BookService {
     if (bookData.genre !== undefined) {
       updates.push('genre = ?');
       values.push(bookData.genre);
-    }
-    if (bookData.description !== undefined) {
-      updates.push('description = ?');
-      values.push(bookData.description);
     }
     if (bookData.disponible !== undefined) {
       updates.push('disponible = ?');
@@ -159,7 +151,6 @@ export class BookService {
       isbn: row.isbn,
       anneePublication: row.anneePublication,
       genre: row.genre,
-      description: row.description || '',
       disponible: Boolean(row.disponible),
       dateAjout: new Date(row.dateAjout)
     };
@@ -168,8 +159,8 @@ export class BookService {
   async searchBooks(query: string): Promise<Book[]> {
     const searchQuery = `%${query}%`;
     const rows = await database.all(
-      'SELECT * FROM books WHERE titre LIKE ? OR auteur LIKE ? OR genre LIKE ? OR description LIKE ? ORDER BY dateAjout DESC',
-      [searchQuery, searchQuery, searchQuery, searchQuery]
+      'SELECT * FROM books WHERE titre LIKE ? OR auteur LIKE ? OR genre LIKE ? ORDER BY dateAjout DESC',
+      [searchQuery, searchQuery, searchQuery]
     );
     
     return rows.map(row => ({
@@ -179,7 +170,6 @@ export class BookService {
       isbn: row.isbn,
       anneePublication: row.anneePublication,
       genre: row.genre,
-      description: row.description || '',
       disponible: Boolean(row.disponible),
       dateAjout: new Date(row.dateAjout)
     }));

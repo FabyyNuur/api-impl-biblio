@@ -4,8 +4,9 @@
   "description": "API RESTful pour la gestion d'une bibliothèque",
   "main": "dist/index.js",
   "scripts": {
-    "start": "node src/index.js",
+    "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
     "test": "jest"
   },
   "keywords": [
