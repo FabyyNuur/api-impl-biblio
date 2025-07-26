@@ -1,3 +1,5 @@
+// ...existing code...
+
 import { v4 as uuidv4 } from 'uuid';
 import { database } from '../config/database';
 import { Emprunt, CreateEmpruntRequest, EmpruntAvecDetails } from '../models/Emprunt';
@@ -18,6 +20,15 @@ export class EmpruntService {
       throw new Error('Utilisateur inactif');
     }
 
+    // Vérifier que l'utilisateur n'a pas déjà un emprunt EN_COURS (tous livres confondus)
+    const empruntEnCours = await database.get(
+      'SELECT * FROM emprunts WHERE utilisateurId = ? AND statut = "EN_COURS"',
+      [empruntData.utilisateurId]
+    );
+    if (empruntEnCours) {
+      throw new Error('Cet utilisateur a déjà un emprunt en cours. Il doit le rendre avant d\'en faire un autre.');
+    }
+
     // Vérifier que le livre existe et est disponible
     const book = await this.bookService.getBookById(empruntData.livreId);
     if (!book) {
@@ -25,16 +36,6 @@ export class EmpruntService {
     }
     if (!book.disponible) {
       throw new Error('Livre non disponible');
-    }
-
-    // Vérifier que l'utilisateur n'a pas déjà emprunté ce livre
-    const empruntExistant = await database.get(
-      'SELECT * FROM emprunts WHERE utilisateurId = ? AND livreId = ? AND statut = "EN_COURS"',
-      [empruntData.utilisateurId, empruntData.livreId]
-    );
-
-    if (empruntExistant) {
-      throw new Error('Ce livre est déjà emprunté par cet utilisateur');
     }
 
     const id = uuidv4();
@@ -63,6 +64,40 @@ export class EmpruntService {
     };
   }
 
+    async getEmpruntsHistorique(): Promise<EmpruntAvecDetails[]> {
+    const rows = await database.all(`
+      SELECT 
+        e.*,
+        u.nom as user_nom, u.prenom as user_prenom, u.email as user_email,
+        b.titre as book_titre, b.auteur as book_auteur, b.isbn as book_isbn
+      FROM emprunts e
+      JOIN users u ON e.utilisateurId = u.id
+      JOIN books b ON e.livreId = b.id
+      WHERE e.statut = 'RETOURNE'
+      ORDER BY e.dateRetourEffectif DESC
+    `);
+    
+    return rows.map((row: any) => ({
+      id: row.id,
+      utilisateurId: row.utilisateurId,
+      livreId: row.livreId,
+      dateEmprunt: new Date(row.dateEmprunt),
+      dateRetourPrevu: new Date(row.dateRetourPrevu),
+      dateRetourEffectif: row.dateRetourEffectif ? new Date(row.dateRetourEffectif) : undefined,
+      statut: row.statut,
+      utilisateur: {
+        nom: row.user_nom,
+        prenom: row.user_prenom,
+        email: row.user_email
+      },
+      livre: {
+        titre: row.book_titre,
+        auteur: row.book_auteur,
+        isbn: row.book_isbn
+      }
+    }));
+ 
+  }
   async returnBook(empruntId: string): Promise<Emprunt | null> {
     const emprunt = await this.getEmpruntById(empruntId);
     if (!emprunt) {

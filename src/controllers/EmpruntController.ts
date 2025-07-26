@@ -1,9 +1,35 @@
+
 import { Request, Response } from 'express';
 import { EmpruntService } from '../services/EmpruntService';
 import { CreateEmpruntRequest } from '../models/Emprunt';
 
+
+
 export class EmpruntController {
+  [x: string]: any;
   private empruntService = new EmpruntService();
+
+  /**
+   * @swagger
+   * /api/emprunts/historique:
+   *   get:
+   *     summary: Lister tous les emprunts retournés (historique)
+   *     tags: [Emprunts]
+   *     responses:
+   *       200:
+   *         description: Liste des emprunts retournés
+   */
+  async getEmpruntsHistorique(req: Request, res: Response): Promise<void> {
+    try {
+      const emprunts = await this.empruntService.getEmpruntsHistorique();
+      res.json(emprunts);
+    } catch (error) {
+      res.status(500).json({
+        error: 'Erreur interne du serveur',
+        details: error instanceof Error ? error.message : 'Erreur inconnue'
+      });
+    }
+  }
 
   /**
    * @swagger
