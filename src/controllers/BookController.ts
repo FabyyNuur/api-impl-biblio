@@ -10,9 +10,9 @@ export class BookController {
       const bookData: CreateBookRequest = req.body;
 
       // Validation basique
-      if (!bookData.titre || !bookData.auteur || !bookData.isbn || !bookData.anneePublication || !bookData.genre) {
+      if (!bookData.titre || !bookData.auteur || !bookData.isbn || !bookData.anneePublication || !bookData.genre || bookData.nombreExemplaires === undefined) {
         res.status(400).json({ 
-          error: 'Tous les champs sont obligatoires (titre, auteur, isbn, anneePublication, genre)' 
+          error: 'Tous les champs sont obligatoires (titre, auteur, isbn, anneePublication, genre, nombreExemplaires)' 
         });
         return;
       }

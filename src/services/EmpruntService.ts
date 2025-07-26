@@ -34,7 +34,7 @@ export class EmpruntService {
     if (!book) {
       throw new Error('Livre introuvable');
     }
-    if (!book.disponible) {
+    if (!book.disponible || book.nombreExemplaires < 1) {
       throw new Error('Livre non disponible');
     }
 
@@ -51,8 +51,12 @@ export class EmpruntService {
       [id, empruntData.utilisateurId, empruntData.livreId, dateEmprunt.toISOString(), dateRetourPrevu.toISOString(), 'EN_COURS']
     );
 
-    // Marquer le livre comme non disponible
-    await this.bookService.updateBook(empruntData.livreId, { disponible: false });
+    // Décrémenter le nombre d'exemplaires et mettre à jour la disponibilité si besoin
+    const newNombreExemplaires = book.nombreExemplaires - 1;
+    await this.bookService.updateBook(empruntData.livreId, {
+      nombreExemplaires: newNombreExemplaires,
+      disponible: newNombreExemplaires > 0
+    });
 
     return {
       id,
@@ -67,9 +71,9 @@ export class EmpruntService {
     async getEmpruntsHistorique(): Promise<EmpruntAvecDetails[]> {
     const rows = await database.all(`
       SELECT 
-        e.*,
-        u.nom as user_nom, u.prenom as user_prenom, u.email as user_email,
-        b.titre as book_titre, b.auteur as book_auteur, b.isbn as book_isbn
+        e.*, 
+        u.nom as user_nom, u.prenom as user_prenom, u.email as user_email, 
+        b.titre as book_titre, b.auteur as book_auteur, b.isbn as book_isbn, b.nombreExemplaires as book_nombreExemplaires
       FROM emprunts e
       JOIN users u ON e.utilisateurId = u.id
       JOIN books b ON e.livreId = b.id
@@ -93,7 +97,8 @@ export class EmpruntService {
       livre: {
         titre: row.book_titre,
         auteur: row.book_auteur,
-        isbn: row.book_isbn
+        isbn: row.book_isbn,
+        nombreExemplaires: row.book_nombreExemplaires
       }
     }));
  
@@ -117,7 +122,12 @@ export class EmpruntService {
     );
 
     // Marquer le livre comme disponible
-    await this.bookService.updateBook(emprunt.livreId, { disponible: true });
+    const book = await this.bookService.getBookById(emprunt.livreId);
+    const newNombreExemplaires = (book?.nombreExemplaires ?? 0) + 1;
+    await this.bookService.updateBook(emprunt.livreId, {
+      nombreExemplaires: newNombreExemplaires,
+      disponible: true
+    });
 
     return {
       ...emprunt,
@@ -147,9 +157,9 @@ export class EmpruntService {
   async getEmpruntsByUserId(utilisateurId: string): Promise<EmpruntAvecDetails[]> {
     const rows = await database.all(`
       SELECT 
-        e.*,
-        u.nom as user_nom, u.prenom as user_prenom, u.email as user_email,
-        b.titre as book_titre, b.auteur as book_auteur, b.isbn as book_isbn
+        e.*, 
+        u.nom as user_nom, u.prenom as user_prenom, u.email as user_email, 
+        b.titre as book_titre, b.auteur as book_auteur, b.isbn as book_isbn, b.nombreExemplaires as book_nombreExemplaires
       FROM emprunts e
       JOIN users u ON e.utilisateurId = u.id
       JOIN books b ON e.livreId = b.id
@@ -173,7 +183,8 @@ export class EmpruntService {
       livre: {
         titre: row.book_titre,
         auteur: row.book_auteur,
-        isbn: row.book_isbn
+        isbn: row.book_isbn,
+        nombreExemplaires: row.book_nombreExemplaires
       }
     }));
   }
@@ -181,9 +192,9 @@ export class EmpruntService {
   async getAllEmpruntsEnCours(): Promise<EmpruntAvecDetails[]> {
     const rows = await database.all(`
       SELECT 
-        e.*,
-        u.nom as user_nom, u.prenom as user_prenom, u.email as user_email,
-        b.titre as book_titre, b.auteur as book_auteur, b.isbn as book_isbn
+        e.*, 
+        u.nom as user_nom, u.prenom as user_prenom, u.email as user_email, 
+        b.titre as book_titre, b.auteur as book_auteur, b.isbn as book_isbn, b.nombreExemplaires as book_nombreExemplaires
       FROM emprunts e
       JOIN users u ON e.utilisateurId = u.id
       JOIN books b ON e.livreId = b.id
@@ -207,7 +218,8 @@ export class EmpruntService {
       livre: {
         titre: row.book_titre,
         auteur: row.book_auteur,
-        isbn: row.book_isbn
+        isbn: row.book_isbn,
+        nombreExemplaires: row.book_nombreExemplaires
       }
     }));
   }
@@ -217,9 +229,9 @@ export class EmpruntService {
     
     const rows = await database.all(`
       SELECT 
-        e.*,
-        u.nom as user_nom, u.prenom as user_prenom, u.email as user_email,
-        b.titre as book_titre, b.auteur as book_auteur, b.isbn as book_isbn
+        e.*, 
+        u.nom as user_nom, u.prenom as user_prenom, u.email as user_email, 
+        b.titre as book_titre, b.auteur as book_auteur, b.isbn as book_isbn, b.nombreExemplaires as book_nombreExemplaires
       FROM emprunts e
       JOIN users u ON e.utilisateurId = u.id
       JOIN books b ON e.livreId = b.id
@@ -251,7 +263,8 @@ export class EmpruntService {
       livre: {
         titre: row.book_titre,
         auteur: row.book_auteur,
-        isbn: row.book_isbn
+        isbn: row.book_isbn,
+        nombreExemplaires: row.book_nombreExemplaires
       }
     }));
   }

@@ -100,6 +100,11 @@ const options = {
               type: 'string',
               format: 'date-time',
               description: 'Date d\'ajout du livre'
+            },
+            nombreExemplaires: {
+              type: 'integer',
+              minimum: 1,
+              description: 'Nombre d\'exemplaires disponibles'
             }
           }
         },
@@ -353,14 +358,15 @@ const options = {
               'application/json': {
                 schema: {
                   type: 'object',
-                  required: ['titre', 'auteur', 'isbn', 'anneePublication', 'genre', 'description'],
+                  required: ['titre', 'auteur', 'isbn', 'anneePublication', 'genre', 'description', 'nombreExemplaires'],
                   properties: {
                     titre: { type: 'string' },
                     auteur: { type: 'string' },
                     isbn: { type: 'string' },
                     anneePublication: { type: 'integer' },
                     genre: { type: 'string' },
-                    description: { type: 'string' }
+                    description: { type: 'string' },
+                    nombreExemplaires: { type: 'integer', minimum: 1 }
                   }
                 }
               }
@@ -441,7 +447,8 @@ const options = {
                     anneePublication: { type: 'integer' },
                     genre: { type: 'string' },
                     description: { type: 'string' },
-                    disponible: { type: 'boolean' }
+                    disponible: { type: 'boolean' },
+                    nombreExemplaires: { type: 'integer', minimum: 1 }
                   }
                 }
               }

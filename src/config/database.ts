@@ -37,7 +37,8 @@ export class Database {
           genre TEXT NOT NULL,
           description TEXT NOT NULL DEFAULT '',
           disponible BOOLEAN DEFAULT 1,
-          dateAjout DATETIME DEFAULT CURRENT_TIMESTAMP
+          dateAjout DATETIME DEFAULT CURRENT_TIMESTAMP,
+          nombreExemplaires INTEGER NOT NULL DEFAULT 1
         )
       `);
 
@@ -64,6 +65,16 @@ export class Database {
         // La colonne existe déjà, c'est normal
         if (!error.message.includes('duplicate column name')) {
           console.error('Erreur lors de l\'ajout de la colonne description:', error);
+        }
+      }
+      // Migration : Ajouter la colonne nombreExemplaires si elle n'existe pas
+      try {
+        await this.run(`ALTER TABLE books ADD COLUMN nombreExemplaires INTEGER NOT NULL DEFAULT 1`);
+        console.log('Colonne nombreExemplaires ajoutée à la table books');
+      } catch (error: any) {
+        // La colonne existe déjà, c'est normal
+        if (!error.message.includes('duplicate column name')) {
+          console.error('Erreur lors de l\'ajout de la colonne nombreExemplaires:', error);
         }
       }
 

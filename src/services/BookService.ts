@@ -8,9 +8,9 @@ export class BookService {
     const dateAjout = new Date();
 
     await database.run(
-      `INSERT INTO books (id, titre, auteur, isbn, anneePublication, genre, disponible, dateAjout) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, bookData.titre, bookData.auteur, bookData.isbn, bookData.anneePublication, bookData.genre, 1, dateAjout.toISOString()]
+      `INSERT INTO books (id, titre, auteur, isbn, anneePublication, genre, disponible, dateAjout, nombreExemplaires) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, bookData.titre, bookData.auteur, bookData.isbn, bookData.anneePublication, bookData.genre, 1, dateAjout.toISOString(), bookData.nombreExemplaires]
     );
 
     return {
@@ -21,7 +21,8 @@ export class BookService {
       anneePublication: bookData.anneePublication,
       genre: bookData.genre,
       disponible: true,
-      dateAjout
+      dateAjout,
+      nombreExemplaires: bookData.nombreExemplaires
     };
   }
 
@@ -40,7 +41,8 @@ export class BookService {
       anneePublication: row.anneePublication,
       genre: row.genre,
       disponible: Boolean(row.disponible),
-      dateAjout: new Date(row.dateAjout)
+      dateAjout: new Date(row.dateAjout),
+      nombreExemplaires: row.nombreExemplaires
     };
   }
 
@@ -55,7 +57,8 @@ export class BookService {
       anneePublication: row.anneePublication,
       genre: row.genre,
       disponible: Boolean(row.disponible),
-      dateAjout: new Date(row.dateAjout)
+      dateAjout: new Date(row.dateAjout),
+      nombreExemplaires: row.nombreExemplaires
     }));
   }
 
@@ -70,7 +73,8 @@ export class BookService {
       anneePublication: row.anneePublication,
       genre: row.genre,
       disponible: Boolean(row.disponible),
-      dateAjout: new Date(row.dateAjout)
+      dateAjout: new Date(row.dateAjout),
+      nombreExemplaires: row.nombreExemplaires
     }));
   }
 
@@ -106,6 +110,10 @@ export class BookService {
     if (bookData.disponible !== undefined) {
       updates.push('disponible = ?');
       values.push(bookData.disponible ? 1 : 0);
+    }
+    if (bookData.nombreExemplaires !== undefined) {
+      updates.push('nombreExemplaires = ?');
+      values.push(bookData.nombreExemplaires);
     }
 
     if (updates.length === 0) {
@@ -152,7 +160,8 @@ export class BookService {
       anneePublication: row.anneePublication,
       genre: row.genre,
       disponible: Boolean(row.disponible),
-      dateAjout: new Date(row.dateAjout)
+      dateAjout: new Date(row.dateAjout),
+      nombreExemplaires: row.nombreExemplaires
     };
   }
 
@@ -171,7 +180,8 @@ export class BookService {
       anneePublication: row.anneePublication,
       genre: row.genre,
       disponible: Boolean(row.disponible),
-      dateAjout: new Date(row.dateAjout)
+      dateAjout: new Date(row.dateAjout),
+      nombreExemplaires: row.nombreExemplaires
     }));
   }
 }
