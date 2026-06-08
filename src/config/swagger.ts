@@ -16,6 +16,10 @@ const options = {
     ],
     tags: [
       {
+        name: 'Système',
+        description: 'État et santé de l\'API'
+      },
+      {
         name: 'Users',
         description: 'Gestion des utilisateurs'
       },
@@ -145,6 +149,32 @@ const options = {
             }
           }
         },
+        EmpruntAvecDetails: {
+          allOf: [
+            { $ref: '#/components/schemas/Emprunt' },
+            {
+              type: 'object',
+              properties: {
+                utilisateur: {
+                  type: 'object',
+                  properties: {
+                    nom: { type: 'string' },
+                    prenom: { type: 'string' },
+                    email: { type: 'string', format: 'email' }
+                  }
+                },
+                livre: {
+                  type: 'object',
+                  properties: {
+                    titre: { type: 'string' },
+                    auteur: { type: 'string' },
+                    isbn: { type: 'string' }
+                  }
+                }
+              }
+            }
+          ]
+        },
         Error: {
           type: 'object',
           properties: {
@@ -161,6 +191,29 @@ const options = {
       }
     },
     paths: {
+      '/health': {
+        get: {
+          tags: ['Système'],
+          summary: 'Vérifier l\'état de l\'API',
+          responses: {
+            200: {
+              description: 'API opérationnelle',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      status: { type: 'string', example: 'OK' },
+                      timestamp: { type: 'string', format: 'date-time' },
+                      uptime: { type: 'number' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       '/api/users': {
         get: {
           tags: ['Users'],
@@ -209,6 +262,14 @@ const options = {
             },
             400: {
               description: 'Données invalides',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/Error' }
+                }
+              }
+            },
+            409: {
+              description: 'Email déjà utilisé',
               content: {
                 'application/json': {
                   schema: { $ref: '#/components/schemas/Error' }
@@ -292,6 +353,14 @@ const options = {
                   schema: { $ref: '#/components/schemas/Error' }
                 }
               }
+            },
+            409: {
+              description: 'Email déjà utilisé par un autre utilisateur',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/Error' }
+                }
+              }
             }
           }
         },
@@ -307,21 +376,19 @@ const options = {
             }
           ],
           responses: {
-            200: {
-              description: 'Utilisateur supprimé',
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                    properties: {
-                      message: { type: 'string' }
-                    }
-                  }
-                }
-              }
+            204: {
+              description: 'Utilisateur supprimé'
             },
             404: {
               description: 'Utilisateur non trouvé',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/Error' }
+                }
+              }
+            },
+            409: {
+              description: 'Impossible de supprimer (emprunts en cours)',
               content: {
                 'application/json': {
                   schema: { $ref: '#/components/schemas/Error' }
@@ -335,6 +402,20 @@ const options = {
         get: {
           tags: ['Books'],
           summary: 'Lister tous les livres',
+          parameters: [
+            {
+              name: 'disponible',
+              in: 'query',
+              schema: { type: 'string', enum: ['true'] },
+              description: 'Filtrer les livres disponibles (alternative à /api/books/available)'
+            },
+            {
+              name: 'search',
+              in: 'query',
+              schema: { type: 'string' },
+              description: 'Rechercher par titre, auteur ou genre (alternative à /api/books/search)'
+            }
+          ],
           responses: {
             200: {
               description: 'Liste des livres',
@@ -358,14 +439,13 @@ const options = {
               'application/json': {
                 schema: {
                   type: 'object',
-                  required: ['titre', 'auteur', 'isbn', 'anneePublication', 'genre', 'description', 'nombreExemplaires'],
+                  required: ['titre', 'auteur', 'isbn', 'anneePublication', 'genre', 'nombreExemplaires'],
                   properties: {
                     titre: { type: 'string' },
                     auteur: { type: 'string' },
                     isbn: { type: 'string' },
                     anneePublication: { type: 'integer' },
                     genre: { type: 'string' },
-                    description: { type: 'string' },
                     nombreExemplaires: { type: 'integer', minimum: 1 }
                   }
                 }
@@ -383,6 +463,14 @@ const options = {
             },
             400: {
               description: 'Données invalides',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/Error' }
+                }
+              }
+            },
+            409: {
+              description: 'ISBN déjà utilisé',
               content: {
                 'application/json': {
                   schema: { $ref: '#/components/schemas/Error' }
@@ -485,20 +573,10 @@ const options = {
             }
           ],
           responses: {
-            200: {
-              description: 'Livre supprimé',
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                    properties: {
-                      message: { type: 'string' }
-                    }
-                  }
-                }
-              }
+            204: {
+              description: 'Livre supprimé'
             },
-            400: {
+            409: {
               description: 'Impossible de supprimer (emprunts en cours)',
               content: {
                 'application/json': {
@@ -558,6 +636,14 @@ const options = {
                     type: 'array',
                     items: { $ref: '#/components/schemas/Book' }
                   }
+                }
+              }
+            },
+            400: {
+              description: 'Paramètre q manquant',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/Error' }
                 }
               }
             }
@@ -655,7 +741,7 @@ const options = {
                 'application/json': {
                   schema: {
                     type: 'array',
-                    items: { $ref: '#/components/schemas/Emprunt' }
+                    items: { $ref: '#/components/schemas/EmpruntAvecDetails' }
                   }
                 }
               }
@@ -674,7 +760,7 @@ const options = {
                 'application/json': {
                   schema: {
                     type: 'array',
-                    items: { $ref: '#/components/schemas/Emprunt' }
+                    items: { $ref: '#/components/schemas/EmpruntAvecDetails' }
                   }
                 }
               }
@@ -693,7 +779,26 @@ const options = {
                 'application/json': {
                   schema: {
                     type: 'array',
-                    items: { $ref: '#/components/schemas/Emprunt' }
+                    items: { $ref: '#/components/schemas/EmpruntAvecDetails' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/emprunts/historique': {
+        get: {
+          tags: ['Emprunts'],
+          summary: 'Lister l\'historique des emprunts retournés',
+          responses: {
+            200: {
+              description: 'Liste des emprunts retournés',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'array',
+                    items: { $ref: '#/components/schemas/EmpruntAvecDetails' }
                   }
                 }
               }

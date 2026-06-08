@@ -6,6 +6,8 @@ const bookController = new BookController();
 
 // Routes pour les livres
 router.post('/', bookController.createBook.bind(bookController));
+router.get('/available', bookController.getAvailableBooks.bind(bookController));
+router.get('/search', bookController.searchBooks.bind(bookController));
 router.get('/', bookController.getAllBooks.bind(bookController));
 router.get('/:id', bookController.getBookById.bind(bookController));
 router.put('/:id', bookController.updateBook.bind(bookController));

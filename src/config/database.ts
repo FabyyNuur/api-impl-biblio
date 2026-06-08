@@ -2,14 +2,26 @@ import sqlite3 from 'sqlite3';
 
 export class Database {
   private db: sqlite3.Database;
+  private initPromise: Promise<void>;
 
   constructor(dbPath: string = 'bibliotheque.db') {
-    // Utiliser une base de données en mémoire sur Vercel
+    const isTest = process.env.NODE_ENV === 'test';
     const isVercel = process.env.VERCEL === '1';
-    const finalDbPath = isVercel ? ':memory:' : dbPath;
-    
+    const finalDbPath = isTest || isVercel ? ':memory:' : dbPath;
+
     this.db = new sqlite3.Database(finalDbPath);
-    this.initTables();
+    this.initPromise = this.initTables();
+  }
+
+  public async ready(): Promise<void> {
+    await this.initPromise;
+  }
+
+  public async clearTables(): Promise<void> {
+    await this.ready();
+    await this.run('DELETE FROM emprunts');
+    await this.run('DELETE FROM books');
+    await this.run('DELETE FROM users');
   }
 
   private async initTables(): Promise<void> {

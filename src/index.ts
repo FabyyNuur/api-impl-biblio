@@ -55,12 +55,14 @@ app.use('*', (req, res) => {
   });
 });
 
-// Démarrage du serveur
-app.listen(PORT, () => {
-  console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
-  console.log(`📚 Documentation API disponible sur http://localhost:${PORT}/api-docs`);
-  console.log(`🔍 Health check sur http://localhost:${PORT}/health`);
-});
+// Démarrage du serveur (sauf en mode test)
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
+    console.log(`📚 Documentation API disponible sur http://localhost:${PORT}/api-docs`);
+    console.log(`🔍 Health check sur http://localhost:${PORT}/health`);
+  });
+}
 
 // Gestion de l'arrêt propre
 process.on('SIGINT', () => {

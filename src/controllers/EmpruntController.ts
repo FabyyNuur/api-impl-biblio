@@ -6,7 +6,6 @@ import { CreateEmpruntRequest } from '../models/Emprunt';
 
 
 export class EmpruntController {
-  [x: string]: any;
   private empruntService = new EmpruntService();
 
   /**
@@ -76,10 +75,10 @@ export class EmpruntController {
       res.status(201).json(emprunt);
     } catch (error) {
       if (error instanceof Error) {
-        if (error.message.includes('introuvable') || 
+        if (error.message.includes('introuvable') ||
             error.message.includes('non disponible') ||
             error.message.includes('inactif') ||
-            error.message.includes('déjà emprunté')) {
+            error.message.includes('déjà un emprunt')) {
           res.status(400).json({ error: error.message });
           return;
         }

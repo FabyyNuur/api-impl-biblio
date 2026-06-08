@@ -55,6 +55,35 @@ export class BookController {
     }
   }
 
+  async getAvailableBooks(req: Request, res: Response): Promise<void> {
+    try {
+      const books = await this.bookService.getAvailableBooks();
+      res.json(books);
+    } catch (error) {
+      res.status(500).json({
+        error: 'Erreur interne du serveur',
+        details: error instanceof Error ? error.message : 'Erreur inconnue'
+      });
+    }
+  }
+
+  async searchBooks(req: Request, res: Response): Promise<void> {
+    try {
+      const { q } = req.query;
+      if (!q || typeof q !== 'string') {
+        res.status(400).json({ error: 'Le paramètre de recherche q est obligatoire' });
+        return;
+      }
+      const books = await this.bookService.searchBooks(q);
+      res.json(books);
+    } catch (error) {
+      res.status(500).json({
+        error: 'Erreur interne du serveur',
+        details: error instanceof Error ? error.message : 'Erreur inconnue'
+      });
+    }
+  }
+
   async getAllBooks(req: Request, res: Response): Promise<void> {
     try {
       const { disponible, search } = req.query;
