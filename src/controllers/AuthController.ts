@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/AuthService';
 import { UserService } from '../services/UserService';
-import { LoginRequest } from '../models/User';
+import { LoginRequest, ChangePasswordRequest } from '../models/User';
 
 export class AuthController {
   private authService = new AuthService();
@@ -59,6 +59,43 @@ export class AuthController {
       res.status(500).json({
         error: 'Erreur interne du serveur',
         details: error instanceof Error ? error.message : 'Erreur inconnue'
+      });
+    }
+  }
+
+  async changePassword(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Non authentifié' });
+        return;
+      }
+
+      const data: ChangePasswordRequest = req.body;
+
+      if (!data.currentPassword || !data.newPassword) {
+        res.status(400).json({
+          error: 'Les champs currentPassword et newPassword sont obligatoires',
+        });
+        return;
+      }
+
+      const user = await this.authService.changePassword(req.user.id, data);
+      res.json(user);
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message.includes('incorrect')) {
+          res.status(401).json({ error: error.message });
+          return;
+        }
+        if (error.message.includes('6 caractères') || error.message.includes('différent')) {
+          res.status(400).json({ error: error.message });
+          return;
+        }
+      }
+
+      res.status(500).json({
+        error: 'Erreur interne du serveur',
+        details: error instanceof Error ? error.message : 'Erreur inconnue',
       });
     }
   }

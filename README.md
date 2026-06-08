@@ -10,7 +10,7 @@ Cette API permet de gérer l'ensemble des opérations d'une bibliothèque : gest
 
 ### Gestion des Utilisateurs
 
-- Inscription et gestion des profils utilisateurs
+- Gestion des profils utilisateurs (création par le bibliothécaire)
 - Activation/désactivation des comptes
 - Consultation des informations personnelles
 
@@ -50,10 +50,13 @@ Cette API permet de gérer l'ensemble des opérations d'une bibliothèque : gest
 ```bash
 # Cloner le projet
 git clone <votre-repo>
-cd api-impl
+cd api-impl-biblio
 
 # Installer les dépendances
 npm install
+
+# (Optionnel) Peupler le catalogue avec ~100 livres de démonstration
+npm run seed:books
 
 # Démarrer en mode développement
 npm run dev
@@ -67,11 +70,66 @@ Une fois démarré, l'API est accessible sur :
 - **Documentation Swagger :** http://localhost:3000/api-docs
 - **Health Check :** http://localhost:3000/health
 
+Au premier démarrage, un compte **bibliothécaire** par défaut est créé automatiquement s'il n'existe pas encore :
+
+| Champ        | Valeur par défaut   |
+|--------------|---------------------|
+| Email        | `admin@biblio.com`  |
+| Mot de passe | `secret123`         |
+
+Ces valeurs sont configurables via les variables d'environnement `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, etc.
+
+### Mot de passe initial des utilisateurs
+
+Lorsqu'un **bibliothécaire** crée un compte sans mot de passe, l'API assigne un mot de passe par défaut (`ChangeMe123` ou variable `DEFAULT_USER_PASSWORD`) et envoie un **email** à l'utilisateur avec ses identifiants. L'utilisateur doit le changer à sa **première connexion**.
+
+| Variable | Description | Défaut |
+|----------|-------------|--------|
+| `DEFAULT_USER_PASSWORD` | Mot de passe initial pour les comptes créés par un bibliothécaire | `ChangeMe123` |
+| `SMTP_HOST` | Serveur SMTP | — |
+| `SMTP_PORT` | Port SMTP | `587` |
+| `SMTP_SECURE` | Connexion TLS directe (`true`/`false`) | `false` |
+| `SMTP_USER` | Identifiant SMTP | — |
+| `SMTP_PASS` | Mot de passe SMTP | — |
+| `MAIL_FROM` | Expéditeur des emails | `Nuur Library <noreply@biblio.local>` |
+| `FRONTEND_URL` | Lien de connexion dans l'email | `http://localhost:3001` |
+
+Copiez `.env.example` vers `.env` et renseignez vos paramètres SMTP. Sans SMTP configuré, l'email est simulé dans les logs du serveur (mode développement).
+
+- Création de compte **réservée au bibliothécaire** (`POST /api/users`, JWT biblio requis, sans `password` dans le corps) : mot de passe temporaire généré, `mustChangePassword: true`, email envoyé, réponse `{ ..., emailSent: true|false }`.
+- L'inscription publique n'est plus disponible (ni via le frontend `/register`, ni via l'API).
+- Endpoint de changement : `POST /api/auth/change-password` avec `{ currentPassword, newPassword }`.
+
+### Données de démonstration
+
+Deux scripts permettent de préparer l'environnement local :
+
+```bash
+# Créer le compte bibliothécaire par défaut (si absent)
+npm run seed
+
+# Insérer ~100 livres variés dans le catalogue (classiques, SF, polar, BD…)
+npm run seed:books
+
+# Recréer les livres déjà présents (même ISBN)
+npm run seed:books -- --force
+```
+
+Les livres sont définis dans `src/data/books.seed.ts`. Le seed ignore les ISBN déjà en base et est désactivé en environnement `test` ou sur Vercel.
+
 ## Endpoints Principaux
+
+### Authentification
+
+- `POST /api/auth/login` - Connexion (email + mot de passe)
+- `GET /api/auth/me` - Profil de l'utilisateur connecté (JWT requis)
+- `POST /api/auth/change-password` - Changer son mot de passe (JWT requis)
+
+Les rôles **BIBLIOTHECAIRE** et **LECTEUR** contrôlent l'accès aux opérations sensibles (gestion du catalogue, utilisateurs, retours d'emprunts, etc.).
 
 ### Utilisateurs
 
-- `POST /api/users` - Créer un utilisateur
+- `POST /api/users` - Créer un utilisateur (bibliothécaire uniquement)
 - `GET /api/users` - Lister tous les utilisateurs
 - `GET /api/users/{id}` - Consulter un utilisateur
 - `PUT /api/users/{id}` - Modifier un utilisateur
@@ -103,12 +161,14 @@ Une fois démarré, l'API est accessible sur :
 - Informations personnelles (nom, prénom, email)
 - Statut d'activation
 - Date d'inscription
+- Flag `mustChangePassword` (changement obligatoire à la première connexion)
 
 ### Table `books`
 
 - Métadonnées (titre, auteur, ISBN, année, genre)
 - Description détaillée
-- Statut de disponibilité
+- Nombre d'exemplaires
+- Statut de disponibilité (dérivé du stock)
 - Date d'ajout
 
 ### Table `emprunts`
@@ -129,7 +189,9 @@ Une fois démarré, l'API est accessible sur :
   "prenom": "string", 
   "email": "string",
   "dateInscription": "datetime",
-  "actif": "boolean"
+  "actif": "boolean",
+  "role": "BIBLIOTHECAIRE|LECTEUR",
+  "mustChangePassword": "boolean"
 }
 ```
 
@@ -145,7 +207,8 @@ Une fois démarré, l'API est accessible sur :
   "genre": "string",
   "description": "string",
   "disponible": "boolean",
-  "dateAjout": "datetime"
+  "dateAjout": "datetime",
+  "nombreExemplaires": "number"
 }
 ```
 
@@ -195,9 +258,12 @@ npm run test:coverage
 
 - `npm run dev` - Développement avec auto-reload
 - `npm run build` - Construction pour production
-- `npm start` - Démarrage en production
+- `npm start` - Démarrage en production (nécessite `npm run build` au préalable)
 - `npm test` - Exécution des tests
-- `npm run lint` - Vérification du code
+- `npm run test:watch` - Tests en mode watch
+- `npm run test:coverage` - Rapport de couverture
+- `npm run seed` - Créer le compte bibliothécaire par défaut
+- `npm run seed:books` - Peupler le catalogue avec ~100 livres de démonstration
 
 ## Tests Karate (API REST)
 
@@ -223,14 +289,18 @@ Voir [karate-tests/README.md](karate-tests/README.md) pour plus de détails.
 
 ```
 src/
-├── config/          # Configuration (DB, Swagger)
+├── config/          # Configuration (DB, Swagger, seed)
 ├── controllers/     # Contrôleurs HTTP
+├── data/            # Jeux de données (books.seed.ts)
+├── middleware/      # Authentification JWT et rôles
 ├── models/          # Interfaces TypeScript
 ├── routes/          # Définition des routes
+├── scripts/         # Scripts CLI (seed, seed-books)
 ├── services/        # Logique métier
 └── index.ts         # Point d'entrée
 
-tests/               # Tests unitaires
+karate-tests/        # Tests d'intégration Karate
+tests/               # Tests unitaires Jest
 ```
 
 ## Contribution

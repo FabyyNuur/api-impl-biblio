@@ -1,4 +1,5 @@
 /// <reference path="./types/express.d.ts" />
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
@@ -6,6 +7,7 @@ import swaggerSpecs from './config/swagger';
 import routes from './routes';
 import { database } from './config/database';
 import { seedDefaultBibliothecaire } from './config/seed';
+import { isSmtpConfigured } from './config/mail';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -67,6 +69,11 @@ if (process.env.NODE_ENV !== 'test') {
         console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
         console.log(`📚 Documentation API disponible sur http://localhost:${PORT}/api-docs`);
         console.log(`🔍 Health check sur http://localhost:${PORT}/health`);
+        if (isSmtpConfigured()) {
+          console.log('📧 SMTP configuré — les emails seront envoyés');
+        } else {
+          console.warn('📧 SMTP non configuré — les emails ne seront pas envoyés (voir .env)');
+        }
       });
     })
     .catch((error) => {

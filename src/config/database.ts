@@ -109,6 +109,15 @@ export class Database {
         }
       }
 
+      try {
+        await this.run(`ALTER TABLE users ADD COLUMN mustChangePassword BOOLEAN DEFAULT 0`);
+        console.log('Colonne mustChangePassword ajoutée à la table users');
+      } catch (error: any) {
+        if (!error.message.includes('duplicate column name')) {
+          console.error('Erreur lors de l\'ajout de la colonne mustChangePassword:', error);
+        }
+      }
+
       console.log('Tables de la base de données initialisées avec succès');
     } catch (error) {
       console.error('Erreur lors de l\'initialisation des tables:', error);

@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { database } from '../config/database';
 import { JWT_SECRET, JWT_EXPIRES_IN } from '../config/auth';
-import { User, LoginRequest, AuthTokenPayload } from '../models/User';
+import { User, LoginRequest, AuthTokenPayload, ChangePasswordRequest } from '../models/User';
 
 const SALT_ROUNDS = 10;
 
@@ -54,12 +54,57 @@ export class AuthService {
       email: row.email,
       dateInscription: new Date(row.dateInscription),
       actif: Boolean(row.actif),
-      role: row.role
+      role: row.role,
+      mustChangePassword: Boolean(row.mustChangePassword),
     };
 
     return {
       user,
       token: this.generateToken(user)
+    };
+  }
+
+  async changePassword(userId: string, data: ChangePasswordRequest): Promise<User> {
+    const row = await database.get('SELECT * FROM users WHERE id = ?', [userId]);
+
+    if (!row) {
+      throw new Error('Utilisateur non trouvé');
+    }
+
+    const valid = await this.verifyPassword(data.currentPassword, row.passwordHash);
+    if (!valid) {
+      throw new Error('Mot de passe actuel incorrect');
+    }
+
+    if (data.newPassword.length < 6) {
+      throw new Error('Le mot de passe doit contenir au moins 6 caractères');
+    }
+
+    const samePassword = await this.verifyPassword(data.newPassword, row.passwordHash);
+    if (samePassword) {
+      throw new Error('Le nouveau mot de passe doit être différent de l\'actuel');
+    }
+
+    const passwordHash = await this.hashPassword(data.newPassword);
+    await database.run(
+      'UPDATE users SET passwordHash = ?, mustChangePassword = 0 WHERE id = ?',
+      [passwordHash, userId]
+    );
+
+    const updatedRow = await database.get('SELECT * FROM users WHERE id = ?', [userId]);
+    if (!updatedRow) {
+      throw new Error('Utilisateur non trouvé');
+    }
+
+    return {
+      id: updatedRow.id,
+      nom: updatedRow.nom,
+      prenom: updatedRow.prenom,
+      email: updatedRow.email,
+      dateInscription: new Date(updatedRow.dateInscription),
+      actif: Boolean(updatedRow.actif),
+      role: updatedRow.role,
+      mustChangePassword: Boolean(updatedRow.mustChangePassword),
     };
   }
 }

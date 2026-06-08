@@ -10,14 +10,24 @@ export interface User {
   dateInscription: Date;
   actif: boolean;
   role: UserRole;
+  mustChangePassword: boolean;
 }
 
 export interface CreateUserRequest {
   nom: string;
   prenom: string;
   email: string;
-  password: string;
+  password?: string;
   role?: UserRole;
+}
+
+export interface CreateUserResponse extends User {
+  emailSent?: boolean;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
 }
 
 export interface UpdateUserRequest {

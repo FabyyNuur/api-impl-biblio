@@ -310,19 +310,20 @@ const options = {
         },
         post: {
           tags: ['Users'],
-          summary: 'Inscription (rôle LECTEUR par défaut)',
+          summary: 'Créer un utilisateur (bibliothécaire uniquement)',
+          security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
             content: {
               'application/json': {
                 schema: {
                   type: 'object',
-                  required: ['nom', 'prenom', 'email', 'password'],
+                  required: ['nom', 'prenom', 'email'],
                   properties: {
                     nom: { type: 'string' },
                     prenom: { type: 'string' },
                     email: { type: 'string', format: 'email' },
-                    password: { type: 'string', format: 'password', minLength: 6 }
+                    role: { type: 'string', enum: ['LECTEUR', 'BIBLIOTHECAIRE'] }
                   }
                 }
               }
@@ -330,7 +331,7 @@ const options = {
           },
           responses: {
             201: {
-              description: 'Utilisateur créé',
+              description: 'Utilisateur créé (mot de passe temporaire envoyé par email)',
               content: {
                 'application/json': {
                   schema: { $ref: '#/components/schemas/User' }
@@ -345,6 +346,8 @@ const options = {
                 }
               }
             },
+            401: { description: 'Non authentifié' },
+            403: { description: 'Rôle bibliothécaire requis' },
             409: {
               description: 'Email déjà utilisé',
               content: {

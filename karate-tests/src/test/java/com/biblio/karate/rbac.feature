@@ -6,14 +6,8 @@ Feature: Contrôle d'accès par rôle
     * def testPassword = lecteurPassword
     * def biblioLogin = call read('classpath:com/biblio/karate/common/login.feature') { email: '#(biblioEmail)', password: '#(biblioPassword)' }
     * def biblioToken = biblioLogin.token
-
-    Given url baseUrl + '/api/users'
-    And request { nom: 'Lecteur', prenom: 'Test', email: '#(lecteurEmail)', password: '#(testPassword)' }
-    When method post
-    Then status 201
-
-    * def lecteurLogin = call read('classpath:com/biblio/karate/common/login.feature') { email: '#(lecteurEmail)', password: '#(testPassword)' }
-    * def lecteurToken = lecteurLogin.token
+    * def lecteur = call read('classpath:com/biblio/karate/common/create-and-activate-lecteur.feature') { nom: 'Lecteur', prenom: 'Test', email: '#(lecteurEmail)', password: '#(testPassword)' }
+    * def lecteurToken = lecteur.loginResult.token
 
   Scenario: Un lecteur ne peut pas lister tous les utilisateurs
     Given url baseUrl + '/api/users'

@@ -1,19 +1,44 @@
 import request from 'supertest';
 import app from '../src/index';
+import { DEFAULT_USER_PASSWORD } from '../src/config/auth';
 import { USER_ROLES } from '../src/constants/roles';
 import { createTestBibliothecaire, getAuthToken } from './helpers';
 
 const PASSWORD = 'secret123';
 
-async function registerUser(email: string, overrides: Partial<{ nom: string; prenom: string }> = {}) {
+async function createUserAsBiblio(
+  email: string,
+  biblioToken: string,
+  overrides: Partial<{ nom: string; prenom: string }> = {}
+) {
   return request(app)
     .post('/api/users')
+    .set('Authorization', `Bearer ${biblioToken}`)
     .send({
       nom: overrides.nom ?? 'Test',
       prenom: overrides.prenom ?? 'User',
       email,
-      password: PASSWORD
+      role: USER_ROLES.LECTEUR,
     });
+}
+
+async function activateCreatedUser(email: string, newPassword = PASSWORD): Promise<string> {
+  const loginRes = await request(app)
+    .post('/api/auth/login')
+    .send({ email, password: DEFAULT_USER_PASSWORD });
+
+  const tempToken = loginRes.body.token;
+
+  await request(app)
+    .post('/api/auth/change-password')
+    .set('Authorization', `Bearer ${tempToken}`)
+    .send({ currentPassword: DEFAULT_USER_PASSWORD, newPassword });
+
+  const finalLogin = await request(app)
+    .post('/api/auth/login')
+    .send({ email, password: newPassword });
+
+  return finalLogin.body.token;
 }
 
 describe('API REST', () => {
@@ -26,31 +51,53 @@ describe('API REST', () => {
   });
 
   describe('Utilisateurs', () => {
-    it('POST /api/users - créer un utilisateur', async () => {
-      const res = await registerUser('marie@test.com', { nom: 'Durand', prenom: 'Marie' });
+    it('POST /api/users - créer un utilisateur (bibliothécaire)', async () => {
+      const biblio = await createTestBibliothecaire();
+      const token = getAuthToken(biblio);
+      const res = await createUserAsBiblio('marie@test.com', token, { nom: 'Durand', prenom: 'Marie' });
 
       expect(res.status).toBe(201);
       expect(res.body.email).toBe('marie@test.com');
       expect(res.body.role).toBe(USER_ROLES.LECTEUR);
+      expect(res.body.mustChangePassword).toBe(true);
     });
 
     it('POST /api/users - rejette les champs manquants', async () => {
-      const res = await request(app).post('/api/users').send({ nom: 'Test' });
+      const biblio = await createTestBibliothecaire();
+      const token = getAuthToken(biblio);
+      const res = await request(app)
+        .post('/api/users')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ nom: 'Test' });
       expect(res.status).toBe(400);
     });
 
-    it('POST /api/users - rejette un email dupliqué', async () => {
-      await registerUser('dup@test.com', { nom: 'A', prenom: 'B' });
+    it('POST /api/users - rejette inscription publique', async () => {
+      const res = await request(app)
+        .post('/api/users')
+        .send({
+          nom: 'Public',
+          prenom: 'User',
+          email: 'public@test.com',
+          password: PASSWORD,
+        });
+      expect(res.status).toBe(401);
+    });
 
-      const res = await registerUser('dup@test.com', { nom: 'C', prenom: 'D' });
+    it('POST /api/users - rejette un email dupliqué', async () => {
+      const biblio = await createTestBibliothecaire();
+      const token = getAuthToken(biblio);
+      await createUserAsBiblio('dup@test.com', token, { nom: 'A', prenom: 'B' });
+
+      const res = await createUserAsBiblio('dup@test.com', token, { nom: 'C', prenom: 'D' });
       expect(res.status).toBe(409);
     });
 
     it('GET /api/users/:id - récupérer son propre profil', async () => {
-      const created = await registerUser('get@test.com');
-      const token = (await request(app)
-        .post('/api/auth/login')
-        .send({ email: 'get@test.com', password: PASSWORD })).body.token;
+      const biblio = await createTestBibliothecaire();
+      const biblioToken = getAuthToken(biblio);
+      const created = await createUserAsBiblio('get@test.com', biblioToken);
+      const token = await activateCreatedUser('get@test.com');
 
       const res = await request(app)
         .get(`/api/users/${created.body.id}`)
@@ -72,10 +119,10 @@ describe('API REST', () => {
     });
 
     it('PUT /api/users/:id - mettre à jour son profil', async () => {
-      const created = await registerUser('update@test.com', { nom: 'Old', prenom: 'Name' });
-      const token = (await request(app)
-        .post('/api/auth/login')
-        .send({ email: 'update@test.com', password: PASSWORD })).body.token;
+      const biblio = await createTestBibliothecaire();
+      const biblioToken = getAuthToken(biblio);
+      const created = await createUserAsBiblio('update@test.com', biblioToken, { nom: 'Old', prenom: 'Name' });
+      const token = await activateCreatedUser('update@test.com');
 
       const res = await request(app)
         .put(`/api/users/${created.body.id}`)
@@ -87,9 +134,9 @@ describe('API REST', () => {
     });
 
     it('DELETE /api/users/:id - supprimer (bibliothécaire)', async () => {
-      const created = await registerUser('del@test.com', { nom: 'Del', prenom: 'User' });
       const biblio = await createTestBibliothecaire();
       const token = getAuthToken(biblio);
+      const created = await createUserAsBiblio('del@test.com', token, { nom: 'Del', prenom: 'User' });
 
       const res = await request(app)
         .delete(`/api/users/${created.body.id}`)
@@ -190,13 +237,11 @@ describe('API REST', () => {
 
   describe('Emprunts', () => {
     async function setupEmprunt() {
-      const userRes = await registerUser(`empr-${Date.now()}@test.com`, { nom: 'Empr', prenom: 'User' });
-      const userToken = (await request(app)
-        .post('/api/auth/login')
-        .send({ email: userRes.body.email, password: PASSWORD })).body.token;
-
       const biblio = await createTestBibliothecaire();
       const biblioToken = getAuthToken(biblio);
+      const email = `empr-${Date.now()}@test.com`;
+      const userRes = await createUserAsBiblio(email, biblioToken, { nom: 'Empr', prenom: 'User' });
+      const userToken = await activateCreatedUser(email);
       const book = await request(app)
         .post('/api/books')
         .set('Authorization', `Bearer ${biblioToken}`)

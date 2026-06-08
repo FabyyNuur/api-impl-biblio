@@ -1,9 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../config/auth';
+import { database } from '../config/database';
 import { AuthTokenPayload, UserRole } from '../models/User';
 
-export function authenticateToken(req: Request, res: Response, next: NextFunction): void {
+const PASSWORD_CHANGE_WHITELIST = ['/api/auth/change-password', '/api/auth/me'];
+
+function isPasswordChangeWhitelisted(path: string): boolean {
+  return PASSWORD_CHANGE_WHITELIST.some(
+    (whitelistedPath) => path === whitelistedPath || path.startsWith(`${whitelistedPath}/`)
+  );
+}
+
+export async function authenticateToken(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
   const header = req.headers.authorization;
 
   if (!header?.startsWith('Bearer ')) {
@@ -18,7 +31,54 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
     req.user = {
       id: payload.sub,
       email: payload.email,
-      role: payload.role
+      role: payload.role,
+    };
+
+    const path = req.originalUrl.split('?')[0];
+    if (isPasswordChangeWhitelisted(path)) {
+      next();
+      return;
+    }
+
+    const row = await database.get(
+      'SELECT mustChangePassword FROM users WHERE id = ?',
+      [req.user.id]
+    );
+
+    if (row?.mustChangePassword) {
+      res.status(403).json({
+        error: 'Vous devez changer votre mot de passe',
+        mustChangePassword: true,
+      });
+      return;
+    }
+
+    next();
+  } catch {
+    res.status(401).json({ error: 'Token expiré ou invalide' });
+  }
+}
+
+export function optionalAuthenticateToken(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  const header = req.headers.authorization;
+
+  if (!header?.startsWith('Bearer ')) {
+    next();
+    return;
+  }
+
+  const token = header.slice(7);
+
+  try {
+    const payload = jwt.verify(token, JWT_SECRET) as AuthTokenPayload;
+    req.user = {
+      id: payload.sub,
+      email: payload.email,
+      role: payload.role,
     };
     next();
   } catch {

@@ -1,40 +1,63 @@
 import { Request, Response } from 'express';
 import { UserService } from '../services/UserService';
+import { EmailService } from '../services/EmailService';
 import { CreateUserRequest, UpdateUserRequest } from '../models/User';
 import { USER_ROLES } from '../constants/roles';
+import { DEFAULT_USER_PASSWORD } from '../config/auth';
 
 export class UserController {
   private userService = new UserService();
+  private emailService = new EmailService();
 
   async createUser(req: Request, res: Response): Promise<void> {
     try {
       const userData: CreateUserRequest = req.body;
 
-      if (!userData.nom || !userData.prenom || !userData.email || !userData.password) {
+      if (!userData.nom || !userData.prenom || !userData.email) {
         res.status(400).json({
-          error: 'Les champs nom, prenom, email et password sont obligatoires'
+          error: 'Les champs nom, prenom et email sont obligatoires',
         });
         return;
       }
 
-      if (userData.password.length < 6) {
-        res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' });
+      if (userData.password) {
+        res.status(400).json({
+          error: 'Le mot de passe est généré automatiquement et envoyé par email à l\'utilisateur',
+        });
         return;
       }
+
+      const password = DEFAULT_USER_PASSWORD;
+      const mustChangePassword = true;
 
       const existingUser = await this.userService.getUserByEmail(userData.email);
       if (existingUser) {
         res.status(409).json({
-          error: 'Un utilisateur avec cet email existe déjà'
+          error: 'Un utilisateur avec cet email existe déjà',
         });
         return;
       }
 
-      // Seul un bibliothécaire peut créer un compte avec un rôle autre que LECTEUR
-      const role = req.user?.role === USER_ROLES.BIBLIOTHECAIRE ? userData.role : USER_ROLES.LECTEUR;
+      const role = userData.role ?? USER_ROLES.LECTEUR;
 
-      const user = await this.userService.createUser({ ...userData, role });
-      res.status(201).json(user);
+      const user = await this.userService.createUser(
+        { ...userData, role },
+        USER_ROLES.LECTEUR,
+        mustChangePassword,
+        password
+      );
+
+      let emailSent: boolean | undefined;
+      if (mustChangePassword) {
+        emailSent = await this.emailService.sendWelcomeEmail({
+          to: user.email,
+          prenom: user.prenom,
+          nom: user.nom,
+          temporaryPassword: password,
+        });
+      }
+
+      res.status(201).json({ ...user, ...(emailSent !== undefined && { emailSent }) });
     } catch (error) {
       res.status(500).json({
         error: 'Erreur interne du serveur',

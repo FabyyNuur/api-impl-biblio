@@ -8,14 +8,9 @@ Feature: Gestion des emprunts
     * def biblioToken = biblioLogin.token
 
     # Créer un lecteur
-    Given url baseUrl + '/api/users'
-    And request { nom: 'Empr', prenom: 'User', email: '#(empruntEmail)', password: '#(testPassword)' }
-    When method post
-    Then status 201
-    * def lecteurId = response.id
-
-    * def userLogin = call read('classpath:com/biblio/karate/common/login.feature') { email: '#(empruntEmail)', password: '#(testPassword)' }
-    * def userToken = userLogin.token
+    * def lecteur = call read('classpath:com/biblio/karate/common/create-and-activate-lecteur.feature') { nom: 'Empr', prenom: 'User', email: '#(empruntEmail)', password: '#(testPassword)' }
+    * def lecteurId = lecteur.userId
+    * def userToken = lecteur.loginResult.token
 
     # Créer un livre
     * def bookIsbn = '978-empr-' + uniqueId

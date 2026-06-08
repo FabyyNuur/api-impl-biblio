@@ -15,20 +15,42 @@ export class UserService {
       email: row.email as string,
       dateInscription: new Date(row.dateInscription as string),
       actif: Boolean(row.actif),
-      role: row.role as UserRole
+      role: row.role as UserRole,
+      mustChangePassword: Boolean(row.mustChangePassword),
     };
   }
 
-  async createUser(userData: CreateUserRequest, defaultRole: UserRole = USER_ROLES.LECTEUR): Promise<User> {
+  async createUser(
+    userData: CreateUserRequest,
+    defaultRole: UserRole = USER_ROLES.LECTEUR,
+    mustChangePassword = false,
+    password?: string
+  ): Promise<User> {
     const id = uuidv4();
     const dateInscription = new Date();
     const role = userData.role ?? defaultRole;
-    const passwordHash = await this.authService.hashPassword(userData.password);
+    const resolvedPassword = password ?? userData.password;
+
+    if (!resolvedPassword) {
+      throw new Error('Mot de passe requis');
+    }
+
+    const passwordHash = await this.authService.hashPassword(resolvedPassword);
 
     await database.run(
-      `INSERT INTO users (id, nom, prenom, email, dateInscription, actif, passwordHash, role)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, userData.nom, userData.prenom, userData.email, dateInscription.toISOString(), 1, passwordHash, role]
+      `INSERT INTO users (id, nom, prenom, email, dateInscription, actif, passwordHash, role, mustChangePassword)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        userData.nom,
+        userData.prenom,
+        userData.email,
+        dateInscription.toISOString(),
+        1,
+        passwordHash,
+        role,
+        mustChangePassword ? 1 : 0,
+      ]
     );
 
     return {
@@ -38,7 +60,8 @@ export class UserService {
       email: userData.email,
       dateInscription,
       actif: true,
-      role
+      role,
+      mustChangePassword,
     };
   }
 

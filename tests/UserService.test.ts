@@ -25,7 +25,23 @@ describe('UserService', () => {
       expect(user.email).toBe('jean.dupont@example.com');
       expect(user.actif).toBe(true);
       expect(user.role).toBe(USER_ROLES.LECTEUR);
+      expect(user.mustChangePassword).toBe(false);
       expect(user.dateInscription).toBeInstanceOf(Date);
+    });
+
+    it('devrait créer un utilisateur avec changement de mot de passe obligatoire', async () => {
+      const user = await userService.createUser(
+        {
+          nom: 'Temp',
+          prenom: 'User',
+          email: 'temp.user@example.com',
+        },
+        USER_ROLES.LECTEUR,
+        true,
+        'ChangeMe123'
+      );
+
+      expect(user.mustChangePassword).toBe(true);
     });
 
     it('devrait créer un bibliothécaire si le rôle est spécifié', async () => {

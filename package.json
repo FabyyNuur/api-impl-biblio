@@ -10,7 +10,8 @@
     "test": "jest --watchman=false",
     "test:watch": "jest --watch --watchman=false",
     "test:coverage": "jest --coverage --watchman=false",
-    "seed": "ts-node src/scripts/seed.ts"
+    "seed": "ts-node src/scripts/seed.ts",
+    "seed:books": "ts-node src/scripts/seed-books.ts"
   },
   "keywords": [
     "api",
@@ -24,8 +25,10 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^8.0.10",
     "sqlite3": "^5.1.6",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
@@ -38,6 +41,7 @@
     "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.10.0",
+    "@types/nodemailer": "^8.0.0",
     "@types/sqlite3": "^3.1.11",
     "@types/supertest": "^7.2.0",
     "@types/swagger-jsdoc": "^6.0.4",

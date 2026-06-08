@@ -1,6 +1,7 @@
 import request from 'supertest';
 import app from '../src/index';
 import { AuthService } from '../src/services/AuthService';
+import { DEFAULT_USER_PASSWORD } from '../src/config/auth';
 import { createTestUser, createTestBibliothecaire } from './helpers';
 
 describe('Authentification', () => {
@@ -121,6 +122,91 @@ describe('Authentification', () => {
         });
 
       expect(res.status).toBe(201);
+    });
+  });
+
+  describe('Création utilisateur avec mot de passe par défaut', () => {
+    it('un bibliothécaire peut créer un utilisateur sans mot de passe', async () => {
+      const biblio = await createTestBibliothecaire();
+      const token = authService.generateToken(biblio);
+      const email = `default-pwd-${Date.now()}@test.com`;
+
+      const res = await request(app)
+        .post('/api/users')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          nom: 'Nouveau',
+          prenom: 'Lecteur',
+          email,
+          role: 'LECTEUR',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.mustChangePassword).toBe(true);
+      expect(res.body.emailSent).toBe(true);
+    });
+
+    it('refuse la création sans authentification biblio', async () => {
+      const res = await request(app)
+        .post('/api/users')
+        .send({
+          nom: 'Anonyme',
+          prenom: 'User',
+          email: `anon-${Date.now()}@test.com`,
+        });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('refuse l\'inscription publique avec mot de passe', async () => {
+      const res = await request(app)
+        .post('/api/users')
+        .send({
+          nom: 'Public',
+          prenom: 'User',
+          email: `public-${Date.now()}@test.com`,
+          password: 'secret123',
+        });
+
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe('Changement de mot de passe obligatoire', () => {
+    it('bloque l\'accès tant que le mot de passe n\'est pas changé', async () => {
+      const biblio = await createTestBibliothecaire();
+      const biblioToken = authService.generateToken(biblio);
+      const email = `must-change-${Date.now()}@test.com`;
+
+      await request(app)
+        .post('/api/users')
+        .set('Authorization', `Bearer ${biblioToken}`)
+        .send({ nom: 'Temp', prenom: 'User', email })
+        .expect(201);
+
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({ email, password: DEFAULT_USER_PASSWORD });
+
+      expect(loginRes.status).toBe(200);
+      expect(loginRes.body.user.mustChangePassword).toBe(true);
+
+      const userToken = loginRes.body.token;
+
+      const blocked = await request(app)
+        .get('/api/users')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(blocked.status).toBe(403);
+      expect(blocked.body.mustChangePassword).toBe(true);
+
+      const changeRes = await request(app)
+        .post('/api/auth/change-password')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ currentPassword: DEFAULT_USER_PASSWORD, newPassword: 'newpass123' });
+
+      expect(changeRes.status).toBe(200);
+      expect(changeRes.body.mustChangePassword).toBe(false);
     });
   });
 });

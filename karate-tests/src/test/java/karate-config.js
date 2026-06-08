@@ -4,7 +4,8 @@ function fn() {
     baseUrl: 'http://localhost:3000',
     biblioEmail: 'admin@biblio.com',
     biblioPassword: 'secret123',
-    lecteurPassword: 'secret123'
+    lecteurPassword: 'secret123',
+    defaultUserPassword: 'ChangeMe123'
   };
 
   if (env === 'ci') {
