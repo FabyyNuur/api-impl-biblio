@@ -199,6 +199,26 @@ npm run test:coverage
 - `npm test` - Exécution des tests
 - `npm run lint` - Vérification du code
 
+## Tests Karate (API REST)
+
+Des tests d'intégration Karate sont disponibles dans le dossier `karate-tests/`.
+
+**Prérequis :** Java 17+, Maven 3.8+
+
+```bash
+# Démarrer l'API
+npm run dev
+
+# Lancer les tests Karate
+./scripts/run-karate.sh
+# ou
+cd karate-tests && mvn test
+```
+
+Rapport HTML : `karate-tests/target/karate-reports/karate-summary.html`
+
+Voir [karate-tests/README.md](karate-tests/README.md) pour plus de détails.
+
 ## Architecture
 
 ```
