@@ -94,6 +94,11 @@ export class UserController {
         return;
       }
 
+      if (req.user?.id === id && userData.actif === false) {
+        res.status(403).json({ error: 'Vous ne pouvez pas désactiver votre propre compte' });
+        return;
+      }
+
       if (req.user?.role === 'LECTEUR') {
         const { actif, role, ...allowedFields } = userData;
         if (actif !== undefined || role !== undefined) {
@@ -128,6 +133,12 @@ export class UserController {
   async deleteUser(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
+
+      if (req.user?.id === id) {
+        res.status(403).json({ error: 'Vous ne pouvez pas supprimer votre propre compte' });
+        return;
+      }
+
       const success = await this.userService.deleteUser(id);
 
       if (!success) {

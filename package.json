@@ -9,7 +9,8 @@
     "build": "tsc -p tsconfig.build.json",
     "test": "jest --watchman=false",
     "test:watch": "jest --watch --watchman=false",
-    "test:coverage": "jest --coverage --watchman=false"
+    "test:coverage": "jest --coverage --watchman=false",
+    "seed": "ts-node src/scripts/seed.ts"
   },
   "keywords": [
     "api",

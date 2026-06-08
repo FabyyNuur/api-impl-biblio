@@ -3,14 +3,47 @@ import { database } from '../config/database';
 import { Book, CreateBookRequest, UpdateBookRequest } from '../models/Book';
 
 export class BookService {
+  private mapRowToBook(row: Record<string, unknown>): Book {
+    const nombreExemplaires = row.nombreExemplaires as number;
+
+    return {
+      id: row.id as string,
+      titre: row.titre as string,
+      auteur: row.auteur as string,
+      isbn: row.isbn as string,
+      anneePublication: row.anneePublication as number,
+      genre: row.genre as string,
+      description: (row.description as string) || '',
+      nombreExemplaires,
+      disponible: nombreExemplaires > 0,
+      dateAjout: new Date(row.dateAjout as string),
+    };
+  }
+
+  private syncDisponibilite(nombreExemplaires: number): boolean {
+    return nombreExemplaires > 0;
+  }
+
   async createBook(bookData: CreateBookRequest): Promise<Book> {
     const id = uuidv4();
     const dateAjout = new Date();
+    const description = bookData.description?.trim() ?? '';
 
     await database.run(
-      `INSERT INTO books (id, titre, auteur, isbn, anneePublication, genre, disponible, dateAjout, nombreExemplaires) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, bookData.titre, bookData.auteur, bookData.isbn, bookData.anneePublication, bookData.genre, 1, dateAjout.toISOString(), bookData.nombreExemplaires]
+      `INSERT INTO books (id, titre, auteur, isbn, anneePublication, genre, description, disponible, dateAjout, nombreExemplaires)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        bookData.titre,
+        bookData.auteur,
+        bookData.isbn,
+        bookData.anneePublication,
+        bookData.genre,
+        description,
+        1,
+        dateAjout.toISOString(),
+        bookData.nombreExemplaires,
+      ]
     );
 
     return {
@@ -20,62 +53,33 @@ export class BookService {
       isbn: bookData.isbn,
       anneePublication: bookData.anneePublication,
       genre: bookData.genre,
+      description,
       disponible: true,
       dateAjout,
-      nombreExemplaires: bookData.nombreExemplaires
+      nombreExemplaires: bookData.nombreExemplaires,
     };
   }
 
   async getBookById(id: string): Promise<Book | null> {
     const row = await database.get('SELECT * FROM books WHERE id = ?', [id]);
-    
+
     if (!row) {
       return null;
     }
 
-    return {
-      id: row.id,
-      titre: row.titre,
-      auteur: row.auteur,
-      isbn: row.isbn,
-      anneePublication: row.anneePublication,
-      genre: row.genre,
-      disponible: Boolean(row.disponible),
-      dateAjout: new Date(row.dateAjout),
-      nombreExemplaires: row.nombreExemplaires
-    };
+    return this.mapRowToBook(row);
   }
 
   async getAllBooks(): Promise<Book[]> {
     const rows = await database.all('SELECT * FROM books ORDER BY dateAjout DESC');
-    
-    return rows.map(row => ({
-      id: row.id,
-      titre: row.titre,
-      auteur: row.auteur,
-      isbn: row.isbn,
-      anneePublication: row.anneePublication,
-      genre: row.genre,
-      disponible: Boolean(row.disponible),
-      dateAjout: new Date(row.dateAjout),
-      nombreExemplaires: row.nombreExemplaires
-    }));
+    return rows.map((row) => this.mapRowToBook(row));
   }
 
   async getAvailableBooks(): Promise<Book[]> {
-    const rows = await database.all('SELECT * FROM books WHERE disponible = 1 ORDER BY dateAjout DESC');
-    
-    return rows.map(row => ({
-      id: row.id,
-      titre: row.titre,
-      auteur: row.auteur,
-      isbn: row.isbn,
-      anneePublication: row.anneePublication,
-      genre: row.genre,
-      disponible: Boolean(row.disponible),
-      dateAjout: new Date(row.dateAjout),
-      nombreExemplaires: row.nombreExemplaires
-    }));
+    const rows = await database.all(
+      'SELECT * FROM books WHERE nombreExemplaires > 0 ORDER BY dateAjout DESC'
+    );
+    return rows.map((row) => this.mapRowToBook(row));
   }
 
   async updateBook(id: string, bookData: UpdateBookRequest): Promise<Book | null> {
@@ -85,7 +89,7 @@ export class BookService {
     }
 
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
 
     if (bookData.titre !== undefined) {
       updates.push('titre = ?');
@@ -107,13 +111,25 @@ export class BookService {
       updates.push('genre = ?');
       values.push(bookData.genre);
     }
-    if (bookData.disponible !== undefined) {
-      updates.push('disponible = ?');
-      values.push(bookData.disponible ? 1 : 0);
+    if (bookData.description !== undefined) {
+      updates.push('description = ?');
+      values.push(bookData.description.trim());
     }
     if (bookData.nombreExemplaires !== undefined) {
       updates.push('nombreExemplaires = ?');
       values.push(bookData.nombreExemplaires);
+    }
+
+    const nextNombreExemplaires =
+      bookData.nombreExemplaires ?? existingBook.nombreExemplaires;
+    const nextDisponible =
+      bookData.disponible !== undefined
+        ? bookData.disponible
+        : this.syncDisponibilite(nextNombreExemplaires);
+
+    if (bookData.nombreExemplaires !== undefined || bookData.disponible !== undefined) {
+      updates.push('disponible = ?');
+      values.push(nextDisponible ? 1 : 0);
     }
 
     if (updates.length === 0) {
@@ -122,16 +138,12 @@ export class BookService {
 
     values.push(id);
 
-    await database.run(
-      `UPDATE books SET ${updates.join(', ')} WHERE id = ?`,
-      values
-    );
+    await database.run(`UPDATE books SET ${updates.join(', ')} WHERE id = ?`, values);
 
     return this.getBookById(id);
   }
 
   async deleteBook(id: string): Promise<boolean> {
-    // Vérifier s'il y a des emprunts en cours pour ce livre
     const empruntsEnCours = await database.get(
       'SELECT COUNT(*) as count FROM emprunts WHERE livreId = ? AND statut = "EN_COURS"',
       [id]
@@ -147,41 +159,23 @@ export class BookService {
 
   async getBookByIsbn(isbn: string): Promise<Book | null> {
     const row = await database.get('SELECT * FROM books WHERE isbn = ?', [isbn]);
-    
+
     if (!row) {
       return null;
     }
 
-    return {
-      id: row.id,
-      titre: row.titre,
-      auteur: row.auteur,
-      isbn: row.isbn,
-      anneePublication: row.anneePublication,
-      genre: row.genre,
-      disponible: Boolean(row.disponible),
-      dateAjout: new Date(row.dateAjout),
-      nombreExemplaires: row.nombreExemplaires
-    };
+    return this.mapRowToBook(row);
   }
 
   async searchBooks(query: string): Promise<Book[]> {
     const searchQuery = `%${query}%`;
     const rows = await database.all(
-      'SELECT * FROM books WHERE titre LIKE ? OR auteur LIKE ? OR genre LIKE ? ORDER BY dateAjout DESC',
-      [searchQuery, searchQuery, searchQuery]
+      `SELECT * FROM books
+       WHERE titre LIKE ? OR auteur LIKE ? OR genre LIKE ? OR description LIKE ?
+       ORDER BY dateAjout DESC`,
+      [searchQuery, searchQuery, searchQuery, searchQuery]
     );
-    
-    return rows.map(row => ({
-      id: row.id,
-      titre: row.titre,
-      auteur: row.auteur,
-      isbn: row.isbn,
-      anneePublication: row.anneePublication,
-      genre: row.genre,
-      disponible: Boolean(row.disponible),
-      dateAjout: new Date(row.dateAjout),
-      nombreExemplaires: row.nombreExemplaires
-    }));
+
+    return rows.map((row) => this.mapRowToBook(row));
   }
 }

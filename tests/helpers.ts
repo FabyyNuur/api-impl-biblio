@@ -49,6 +49,7 @@ export async function createTestBook(overrides: Partial<{
   anneePublication: number;
   genre: string;
   nombreExemplaires: number;
+  description: string;
 }> = {}) {
   return bookService.createBook({
     titre: overrides.titre ?? 'Le Petit Prince',
@@ -56,6 +57,7 @@ export async function createTestBook(overrides: Partial<{
     isbn: overrides.isbn ?? `978-${Date.now()}-${Math.random()}`,
     anneePublication: overrides.anneePublication ?? 1943,
     genre: overrides.genre ?? 'Conte',
-    nombreExemplaires: overrides.nombreExemplaires ?? 2
+    nombreExemplaires: overrides.nombreExemplaires ?? 2,
+    description: overrides.description,
   });
 }

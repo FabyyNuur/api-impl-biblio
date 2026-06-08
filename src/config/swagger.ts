@@ -490,7 +490,7 @@ const options = {
               name: 'search',
               in: 'query',
               schema: { type: 'string' },
-              description: 'Rechercher par titre, auteur ou genre (alternative à /api/books/search)'
+              description: 'Rechercher par titre, auteur, genre ou description (alternative à /api/books/search)'
             }
           ],
           responses: {
@@ -523,7 +523,8 @@ const options = {
                     isbn: { type: 'string' },
                     anneePublication: { type: 'integer' },
                     genre: { type: 'string' },
-                    nombreExemplaires: { type: 'integer', minimum: 1 }
+                    nombreExemplaires: { type: 'integer', minimum: 1 },
+                    description: { type: 'string', description: 'Description du livre (optionnelle)' }
                   }
                 }
               }

@@ -32,7 +32,7 @@ export class EmpruntService {
     if (!book) {
       throw new Error('Livre introuvable');
     }
-    if (!book.disponible || book.nombreExemplaires < 1) {
+    if (book.nombreExemplaires < 1) {
       throw new Error('Livre non disponible');
     }
 
@@ -124,7 +124,6 @@ export class EmpruntService {
     const newNombreExemplaires = (book?.nombreExemplaires ?? 0) + 1;
     await this.bookService.updateBook(emprunt.livreId, {
       nombreExemplaires: newNombreExemplaires,
-      disponible: true
     });
 
     return {

@@ -96,6 +96,31 @@ describe('API REST', () => {
 
       expect(res.status).toBe(204);
     });
+
+    it('DELETE /api/users/:id - refuse la suppression de son propre compte', async () => {
+      const biblio = await createTestBibliothecaire();
+      const token = getAuthToken(biblio);
+
+      const res = await request(app)
+        .delete(`/api/users/${biblio.id}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toContain('propre compte');
+    });
+
+    it('PUT /api/users/:id - refuse la désactivation de son propre compte', async () => {
+      const biblio = await createTestBibliothecaire();
+      const token = getAuthToken(biblio);
+
+      const res = await request(app)
+        .put(`/api/users/${biblio.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ actif: false });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toContain('propre compte');
+    });
   });
 
   describe('Livres', () => {

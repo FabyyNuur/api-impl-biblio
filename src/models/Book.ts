@@ -5,6 +5,7 @@ export interface Book {
   isbn: string;
   anneePublication: number;
   genre: string;
+  description: string;
   disponible: boolean;
   dateAjout: Date;
   nombreExemplaires: number;
@@ -17,6 +18,7 @@ export interface CreateBookRequest {
   anneePublication: number;
   genre: string;
   nombreExemplaires: number;
+  description?: string;
 }
 
 export interface UpdateBookRequest {
@@ -25,6 +27,7 @@ export interface UpdateBookRequest {
   isbn?: string;
   anneePublication?: number;
   genre?: string;
+  description?: string;
   disponible?: boolean;
   nombreExemplaires?: number;
 }

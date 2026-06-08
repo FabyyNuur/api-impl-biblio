@@ -5,6 +5,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerSpecs from './config/swagger';
 import routes from './routes';
 import { database } from './config/database';
+import { seedDefaultBibliothecaire } from './config/seed';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -58,11 +59,20 @@ app.use('*', (req, res) => {
 
 // Démarrage du serveur (sauf en mode test)
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
-    console.log(`📚 Documentation API disponible sur http://localhost:${PORT}/api-docs`);
-    console.log(`🔍 Health check sur http://localhost:${PORT}/health`);
-  });
+  database
+    .ready()
+    .then(() => seedDefaultBibliothecaire())
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
+        console.log(`📚 Documentation API disponible sur http://localhost:${PORT}/api-docs`);
+        console.log(`🔍 Health check sur http://localhost:${PORT}/health`);
+      });
+    })
+    .catch((error) => {
+      console.error('Erreur au démarrage :', error);
+      process.exit(1);
+    });
 }
 
 // Gestion de l'arrêt propre

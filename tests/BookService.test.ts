@@ -25,6 +25,20 @@ describe('BookService', () => {
       expect(book.disponible).toBe(true);
       expect(book.nombreExemplaires).toBe(3);
     });
+
+    it('devrait enregistrer une description optionnelle', async () => {
+      const book = await bookService.createBook({
+        titre: 'Dune',
+        auteur: 'Frank Herbert',
+        isbn: '978-dune-desc',
+        anneePublication: 1965,
+        genre: 'Science-fiction',
+        nombreExemplaires: 2,
+        description: 'Épopée sur la planète Arrakis',
+      });
+
+      expect(book.description).toBe('Épopée sur la planète Arrakis');
+    });
   });
 
   describe('getBookById', () => {
@@ -52,7 +66,7 @@ describe('BookService', () => {
     it('devrait ne retourner que les livres disponibles', async () => {
       const disponible = await createTestBook({ isbn: '978-dispo' });
       const indisponible = await createTestBook({ isbn: '978-indispo' });
-      await bookService.updateBook(indisponible.id, { disponible: false });
+      await bookService.updateBook(indisponible.id, { nombreExemplaires: 0 });
 
       const books = await bookService.getAvailableBooks();
       expect(books).toHaveLength(1);
@@ -65,6 +79,19 @@ describe('BookService', () => {
       const created = await createTestBook();
       const updated = await bookService.updateBook(created.id, { titre: 'Nouveau titre' });
       expect(updated?.titre).toBe('Nouveau titre');
+    });
+
+    it('devrait rendre un livre disponible quand le stock augmente', async () => {
+      const book = await createTestBook({ nombreExemplaires: 1 });
+      await bookService.updateBook(book.id, { nombreExemplaires: 0 });
+
+      const indisponible = await bookService.getBookById(book.id);
+      expect(indisponible?.disponible).toBe(false);
+      expect(indisponible?.nombreExemplaires).toBe(0);
+
+      const updated = await bookService.updateBook(book.id, { nombreExemplaires: 4 });
+      expect(updated?.nombreExemplaires).toBe(4);
+      expect(updated?.disponible).toBe(true);
     });
   });
 
@@ -101,6 +128,19 @@ describe('BookService', () => {
       const results = await bookService.searchBooks('Harry');
       expect(results).toHaveLength(1);
       expect(results[0].titre).toBe('Harry Potter');
+    });
+
+    it('devrait rechercher par description', async () => {
+      await createTestBook({
+        titre: 'Livre A',
+        isbn: '978-desc-a',
+        description: 'Aventure spatiale',
+      });
+      await createTestBook({ titre: 'Livre B', isbn: '978-desc-b' });
+
+      const results = await bookService.searchBooks('spatiale');
+      expect(results).toHaveLength(1);
+      expect(results[0].titre).toBe('Livre A');
     });
   });
 });
