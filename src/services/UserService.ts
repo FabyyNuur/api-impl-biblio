@@ -1,16 +1,33 @@
 import { v4 as uuidv4 } from 'uuid';
 import { database } from '../config/database';
-import { User, CreateUserRequest, UpdateUserRequest } from '../models/User';
+import { User, CreateUserRequest, UpdateUserRequest, UserRole } from '../models/User';
+import { AuthService } from './AuthService';
 
 export class UserService {
-  async createUser(userData: CreateUserRequest): Promise<User> {
+  private authService = new AuthService();
+
+  private mapRowToUser(row: Record<string, unknown>): User {
+    return {
+      id: row.id as string,
+      nom: row.nom as string,
+      prenom: row.prenom as string,
+      email: row.email as string,
+      dateInscription: new Date(row.dateInscription as string),
+      actif: Boolean(row.actif),
+      role: row.role as UserRole
+    };
+  }
+
+  async createUser(userData: CreateUserRequest, defaultRole: UserRole = 'LECTEUR'): Promise<User> {
     const id = uuidv4();
     const dateInscription = new Date();
+    const role = userData.role ?? defaultRole;
+    const passwordHash = await this.authService.hashPassword(userData.password);
 
     await database.run(
-      `INSERT INTO users (id, nom, prenom, email, dateInscription, actif) 
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [id, userData.nom, userData.prenom, userData.email, dateInscription.toISOString(), 1]
+      `INSERT INTO users (id, nom, prenom, email, dateInscription, actif, passwordHash, role)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, userData.nom, userData.prenom, userData.email, dateInscription.toISOString(), 1, passwordHash, role]
     );
 
     return {
@@ -19,38 +36,24 @@ export class UserService {
       prenom: userData.prenom,
       email: userData.email,
       dateInscription,
-      actif: true
+      actif: true,
+      role
     };
   }
 
   async getUserById(id: string): Promise<User | null> {
     const row = await database.get('SELECT * FROM users WHERE id = ?', [id]);
-    
+
     if (!row) {
       return null;
     }
 
-    return {
-      id: row.id,
-      nom: row.nom,
-      prenom: row.prenom,
-      email: row.email,
-      dateInscription: new Date(row.dateInscription),
-      actif: Boolean(row.actif)
-    };
+    return this.mapRowToUser(row);
   }
 
   async getAllUsers(): Promise<User[]> {
     const rows = await database.all('SELECT * FROM users ORDER BY dateInscription DESC');
-    
-    return rows.map(row => ({
-      id: row.id,
-      nom: row.nom,
-      prenom: row.prenom,
-      email: row.email,
-      dateInscription: new Date(row.dateInscription),
-      actif: Boolean(row.actif)
-    }));
+    return rows.map(row => this.mapRowToUser(row));
   }
 
   async updateUser(id: string, userData: UpdateUserRequest): Promise<User | null> {
@@ -60,7 +63,7 @@ export class UserService {
     }
 
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
 
     if (userData.nom !== undefined) {
       updates.push('nom = ?');
@@ -78,6 +81,10 @@ export class UserService {
       updates.push('actif = ?');
       values.push(userData.actif ? 1 : 0);
     }
+    if (userData.role !== undefined) {
+      updates.push('role = ?');
+      values.push(userData.role);
+    }
 
     if (updates.length === 0) {
       return existingUser;
@@ -94,7 +101,6 @@ export class UserService {
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    // Vérifier s'il y a des emprunts en cours
     const empruntsEnCours = await database.get(
       'SELECT COUNT(*) as count FROM emprunts WHERE utilisateurId = ? AND statut = "EN_COURS"',
       [id]
@@ -110,18 +116,11 @@ export class UserService {
 
   async getUserByEmail(email: string): Promise<User | null> {
     const row = await database.get('SELECT * FROM users WHERE email = ?', [email]);
-    
+
     if (!row) {
       return null;
     }
 
-    return {
-      id: row.id,
-      nom: row.nom,
-      prenom: row.prenom,
-      email: row.email,
-      dateInscription: new Date(row.dateInscription),
-      actif: Boolean(row.actif)
-    };
+    return this.mapRowToUser(row);
   }
 }

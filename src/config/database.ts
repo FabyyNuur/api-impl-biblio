@@ -90,6 +90,25 @@ export class Database {
         }
       }
 
+      // Migration : authentification (mot de passe + rôle)
+      try {
+        await this.run(`ALTER TABLE users ADD COLUMN passwordHash TEXT NOT NULL DEFAULT ''`);
+        console.log('Colonne passwordHash ajoutée à la table users');
+      } catch (error: any) {
+        if (!error.message.includes('duplicate column name')) {
+          console.error('Erreur lors de l\'ajout de la colonne passwordHash:', error);
+        }
+      }
+
+      try {
+        await this.run(`ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'LECTEUR'`);
+        console.log('Colonne role ajoutée à la table users');
+      } catch (error: any) {
+        if (!error.message.includes('duplicate column name')) {
+          console.error('Erreur lors de l\'ajout de la colonne role:', error);
+        }
+      }
+
       console.log('Tables de la base de données initialisées avec succès');
     } catch (error) {
       console.error('Erreur lors de l\'initialisation des tables:', error);

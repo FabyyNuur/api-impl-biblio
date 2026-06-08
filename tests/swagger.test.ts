@@ -5,6 +5,8 @@ describe('Documentation Swagger', () => {
 
   const expectedPaths = [
     '/health',
+    '/api/auth/login',
+    '/api/auth/me',
     '/api/users',
     '/api/users/{id}',
     '/api/books',

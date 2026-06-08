@@ -14,7 +14,8 @@ describe('UserService', () => {
       const user = await userService.createUser({
         nom: 'Dupont',
         prenom: 'Jean',
-        email: 'jean.dupont@example.com'
+        email: 'jean.dupont@example.com',
+        password: 'secret123'
       });
 
       expect(user.id).toBeDefined();
@@ -22,7 +23,20 @@ describe('UserService', () => {
       expect(user.prenom).toBe('Jean');
       expect(user.email).toBe('jean.dupont@example.com');
       expect(user.actif).toBe(true);
+      expect(user.role).toBe('LECTEUR');
       expect(user.dateInscription).toBeInstanceOf(Date);
+    });
+
+    it('devrait créer un bibliothécaire si le rôle est spécifié', async () => {
+      const user = await userService.createUser({
+        nom: 'Admin',
+        prenom: 'Biblio',
+        email: 'admin@biblio.com',
+        password: 'secret123',
+        role: 'BIBLIOTHECAIRE'
+      });
+
+      expect(user.role).toBe('BIBLIOTHECAIRE');
     });
   });
 

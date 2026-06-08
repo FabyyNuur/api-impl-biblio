@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import { UserController } from '../controllers/UserController';
+import { authenticateToken, requireRole, requireSelfOrRole } from '../middleware/auth';
 
 const router = Router();
 const userController = new UserController();
 
-// Routes pour les utilisateurs
 router.post('/', userController.createUser.bind(userController));
-router.get('/', userController.getAllUsers.bind(userController));
-router.get('/:id', userController.getUserById.bind(userController));
-router.put('/:id', userController.updateUser.bind(userController));
-router.delete('/:id', userController.deleteUser.bind(userController));
+router.get('/', authenticateToken, requireRole('BIBLIOTHECAIRE'), userController.getAllUsers.bind(userController));
+router.get('/:id', authenticateToken, requireSelfOrRole('id', 'BIBLIOTHECAIRE'), userController.getUserById.bind(userController));
+router.put('/:id', authenticateToken, userController.updateUser.bind(userController));
+router.delete('/:id', authenticateToken, requireRole('BIBLIOTHECAIRE'), userController.deleteUser.bind(userController));
 
 export default router;

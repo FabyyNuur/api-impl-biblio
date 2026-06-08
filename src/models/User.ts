@@ -1,3 +1,5 @@
+export type UserRole = 'BIBLIOTHECAIRE' | 'LECTEUR';
+
 export interface User {
   id: string;
   nom: string;
@@ -5,12 +7,15 @@ export interface User {
   email: string;
   dateInscription: Date;
   actif: boolean;
+  role: UserRole;
 }
 
 export interface CreateUserRequest {
   nom: string;
   prenom: string;
   email: string;
+  password: string;
+  role?: UserRole;
 }
 
 export interface UpdateUserRequest {
@@ -18,4 +23,16 @@ export interface UpdateUserRequest {
   prenom?: string;
   email?: string;
   actif?: boolean;
+  role?: UserRole;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface AuthTokenPayload {
+  sub: string;
+  email: string;
+  role: UserRole;
 }

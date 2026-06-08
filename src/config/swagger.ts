@@ -20,6 +20,10 @@ const options = {
         description: 'État et santé de l\'API'
       },
       {
+        name: 'Auth',
+        description: 'Authentification JWT'
+      },
+      {
         name: 'Users',
         description: 'Gestion des utilisateurs'
       },
@@ -62,7 +66,27 @@ const options = {
             actif: {
               type: 'boolean',
               description: 'Statut actif/inactif'
+            },
+            role: {
+              type: 'string',
+              enum: ['BIBLIOTHECAIRE', 'LECTEUR'],
+              description: 'Rôle de l\'utilisateur'
             }
+          }
+        },
+        LoginRequest: {
+          type: 'object',
+          required: ['email', 'password'],
+          properties: {
+            email: { type: 'string', format: 'email' },
+            password: { type: 'string', format: 'password' }
+          }
+        },
+        AuthResponse: {
+          type: 'object',
+          properties: {
+            user: { $ref: '#/components/schemas/User' },
+            token: { type: 'string', description: 'JWT Bearer token' }
           }
         },
         Book: {
@@ -188,6 +212,14 @@ const options = {
             }
           }
         }
+      },
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Token obtenu via POST /api/auth/login'
+        }
       }
     },
     paths: {
@@ -214,10 +246,54 @@ const options = {
           }
         }
       },
+      '/api/auth/login': {
+        post: {
+          tags: ['Auth'],
+          summary: 'Connexion et obtention d\'un JWT',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/LoginRequest' }
+              }
+            }
+          },
+          responses: {
+            200: {
+              description: 'Connexion réussie',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/AuthResponse' }
+                }
+              }
+            },
+            401: { description: 'Identifiants incorrects' }
+          }
+        }
+      },
+      '/api/auth/me': {
+        get: {
+          tags: ['Auth'],
+          summary: 'Profil de l\'utilisateur connecté',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: {
+              description: 'Profil utilisateur',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/User' }
+                }
+              }
+            },
+            401: { description: 'Non authentifié' }
+          }
+        }
+      },
       '/api/users': {
         get: {
           tags: ['Users'],
-          summary: 'Lister tous les utilisateurs',
+          summary: 'Lister tous les utilisateurs (bibliothécaire)',
+          security: [{ bearerAuth: [] }],
           responses: {
             200: {
               description: 'Liste des utilisateurs',
@@ -234,18 +310,19 @@ const options = {
         },
         post: {
           tags: ['Users'],
-          summary: 'Créer un nouvel utilisateur',
+          summary: 'Inscription (rôle LECTEUR par défaut)',
           requestBody: {
             required: true,
             content: {
               'application/json': {
                 schema: {
                   type: 'object',
-                  required: ['nom', 'prenom', 'email'],
+                  required: ['nom', 'prenom', 'email', 'password'],
                   properties: {
                     nom: { type: 'string' },
                     prenom: { type: 'string' },
-                    email: { type: 'string', format: 'email' }
+                    email: { type: 'string', format: 'email' },
+                    password: { type: 'string', format: 'password', minLength: 6 }
                   }
                 }
               }

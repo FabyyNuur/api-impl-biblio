@@ -9,27 +9,33 @@ export class UserController {
     try {
       const userData: CreateUserRequest = req.body;
 
-      // Validation basique
-      if (!userData.nom || !userData.prenom || !userData.email) {
-        res.status(400).json({ 
-          error: 'Les champs nom, prenom et email sont obligatoires' 
+      if (!userData.nom || !userData.prenom || !userData.email || !userData.password) {
+        res.status(400).json({
+          error: 'Les champs nom, prenom, email et password sont obligatoires'
         });
         return;
       }
 
-      // Vérifier si l'email existe déjà
+      if (userData.password.length < 6) {
+        res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' });
+        return;
+      }
+
       const existingUser = await this.userService.getUserByEmail(userData.email);
       if (existingUser) {
-        res.status(409).json({ 
-          error: 'Un utilisateur avec cet email existe déjà' 
+        res.status(409).json({
+          error: 'Un utilisateur avec cet email existe déjà'
         });
         return;
       }
 
-      const user = await this.userService.createUser(userData);
+      // Seul un bibliothécaire peut créer un compte avec un rôle autre que LECTEUR
+      const role = req.user?.role === 'BIBLIOTHECAIRE' ? userData.role : 'LECTEUR';
+
+      const user = await this.userService.createUser({ ...userData, role });
       res.status(201).json(user);
     } catch (error) {
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Erreur interne du serveur',
         details: error instanceof Error ? error.message : 'Erreur inconnue'
       });
@@ -48,7 +54,7 @@ export class UserController {
 
       res.json(user);
     } catch (error) {
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Erreur interne du serveur',
         details: error instanceof Error ? error.message : 'Erreur inconnue'
       });
@@ -60,7 +66,7 @@ export class UserController {
       const users = await this.userService.getAllUsers();
       res.json(users);
     } catch (error) {
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Erreur interne du serveur',
         details: error instanceof Error ? error.message : 'Erreur inconnue'
       });
@@ -72,15 +78,35 @@ export class UserController {
       const { id } = req.params;
       const userData: UpdateUserRequest = req.body;
 
-      // Vérifier si l'email est déjà utilisé par un autre utilisateur
       if (userData.email) {
         const existingUser = await this.userService.getUserByEmail(userData.email);
         if (existingUser && existingUser.id !== id) {
-          res.status(409).json({ 
-            error: 'Un autre utilisateur utilise déjà cet email' 
+          res.status(409).json({
+            error: 'Un autre utilisateur utilise déjà cet email'
           });
           return;
         }
+      }
+
+      // Un lecteur ne peut modifier que son propre profil (nom, prenom, email)
+      if (req.user?.role === 'LECTEUR' && req.user.id !== id) {
+        res.status(403).json({ error: 'Accès refusé' });
+        return;
+      }
+
+      if (req.user?.role === 'LECTEUR') {
+        const { actif, role, ...allowedFields } = userData;
+        if (actif !== undefined || role !== undefined) {
+          res.status(403).json({ error: 'Vous ne pouvez pas modifier le rôle ou le statut actif' });
+          return;
+        }
+        const user = await this.userService.updateUser(id, allowedFields);
+        if (!user) {
+          res.status(404).json({ error: 'Utilisateur non trouvé' });
+          return;
+        }
+        res.json(user);
+        return;
       }
 
       const user = await this.userService.updateUser(id, userData);
@@ -92,7 +118,7 @@ export class UserController {
 
       res.json(user);
     } catch (error) {
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Erreur interne du serveur',
         details: error instanceof Error ? error.message : 'Erreur inconnue'
       });
@@ -116,7 +142,7 @@ export class UserController {
         return;
       }
 
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Erreur interne du serveur',
         details: error instanceof Error ? error.message : 'Erreur inconnue'
       });
