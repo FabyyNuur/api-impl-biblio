@@ -80,10 +80,11 @@ export function optionalAuthenticateToken(
       email: payload.email,
       role: payload.role,
     };
-    next();
   } catch {
-    res.status(401).json({ error: 'Token expiré ou invalide' });
+    // Token invalide ou expiré : traiter comme requête non authentifiée
   }
+
+  next();
 }
 
 export function requireRole(...roles: UserRole[]) {
