@@ -1,5 +1,6 @@
 import request from 'supertest';
 import app from '../src/index';
+import { USER_ROLES } from '../src/constants/roles';
 import { createTestBibliothecaire, getAuthToken } from './helpers';
 
 const PASSWORD = 'secret123';
@@ -30,7 +31,7 @@ describe('API REST', () => {
 
       expect(res.status).toBe(201);
       expect(res.body.email).toBe('marie@test.com');
-      expect(res.body.role).toBe('LECTEUR');
+      expect(res.body.role).toBe(USER_ROLES.LECTEUR);
     });
 
     it('POST /api/users - rejette les champs manquants', async () => {
@@ -220,6 +221,19 @@ describe('API REST', () => {
 
       expect(res.status).toBe(201);
       expect(res.body.statut).toBe('EN_COURS');
+    });
+
+    it('POST /api/emprunts - refuse un emprunt pour un bibliothécaire', async () => {
+      const { book, biblioToken } = await setupEmprunt();
+      const autreBiblio = await createTestBibliothecaire();
+
+      const res = await request(app)
+        .post('/api/emprunts')
+        .set('Authorization', `Bearer ${biblioToken}`)
+        .send({ livreId: book.id, utilisateurId: autreBiblio.id });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('lecteurs');
     });
 
     it('PATCH /api/emprunts/:id/retour - retourner un livre (bibliothécaire)', async () => {

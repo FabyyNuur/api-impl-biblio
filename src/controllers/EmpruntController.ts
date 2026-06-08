@@ -1,12 +1,15 @@
 
 import { Request, Response } from 'express';
 import { EmpruntService } from '../services/EmpruntService';
+import { UserService } from '../services/UserService';
 import { CreateEmpruntRequest } from '../models/Emprunt';
+import { USER_ROLES } from '../constants/roles';
 
 
 
 export class EmpruntController {
   private empruntService = new EmpruntService();
+  private userService = new UserService();
 
   async getEmpruntsHistorique(req: Request, res: Response): Promise<void> {
     try {
@@ -31,10 +34,23 @@ export class EmpruntController {
         return;
       }
 
-      // Un lecteur emprunte pour son propre compte
-      const utilisateurId = req.user?.role === 'BIBLIOTHECAIRE' && empruntData.utilisateurId
-        ? empruntData.utilisateurId
-        : req.user!.id;
+      let utilisateurId = req.user!.id;
+
+      if (req.user?.role === USER_ROLES.BIBLIOTHECAIRE && empruntData.utilisateurId) {
+        const targetUser = await this.userService.getUserById(empruntData.utilisateurId);
+
+        if (!targetUser) {
+          res.status(400).json({ error: 'Utilisateur introuvable' });
+          return;
+        }
+
+        if (targetUser.role !== USER_ROLES.LECTEUR) {
+          res.status(400).json({ error: 'Seuls les lecteurs peuvent emprunter des livres' });
+          return;
+        }
+
+        utilisateurId = empruntData.utilisateurId;
+      }
 
       const emprunt = await this.empruntService.createEmprunt({
         ...empruntData,
@@ -130,7 +146,7 @@ export class EmpruntController {
         return;
       }
 
-      if (req.user?.role === 'LECTEUR' && emprunt.utilisateurId !== req.user.id) {
+      if (req.user?.role === USER_ROLES.LECTEUR && emprunt.utilisateurId !== req.user.id) {
         res.status(403).json({ error: 'Accès refusé' });
         return;
       }

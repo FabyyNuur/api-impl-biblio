@@ -2,6 +2,7 @@ import { UserService } from '../src/services/UserService';
 import { BookService } from '../src/services/BookService';
 import { AuthService } from '../src/services/AuthService';
 import { User, UserRole } from '../src/models/User';
+import { USER_ROLES } from '../src/constants/roles';
 
 const userService = new UserService();
 const bookService = new BookService();
@@ -33,7 +34,7 @@ export async function createTestBibliothecaire(overrides: Partial<{
 }> = {}): Promise<User> {
   return createTestUser({
     ...overrides,
-    role: 'BIBLIOTHECAIRE',
+    role: USER_ROLES.BIBLIOTHECAIRE,
     email: overrides.email ?? `biblio-${Date.now()}-${Math.random()}@test.com`
   });
 }

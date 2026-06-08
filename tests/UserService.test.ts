@@ -1,3 +1,4 @@
+import { USER_ROLES } from '../src/constants/roles';
 import { UserService } from '../src/services/UserService';
 import { EmpruntService } from '../src/services/EmpruntService';
 import { createTestUser, createTestBook } from './helpers';
@@ -23,7 +24,7 @@ describe('UserService', () => {
       expect(user.prenom).toBe('Jean');
       expect(user.email).toBe('jean.dupont@example.com');
       expect(user.actif).toBe(true);
-      expect(user.role).toBe('LECTEUR');
+      expect(user.role).toBe(USER_ROLES.LECTEUR);
       expect(user.dateInscription).toBeInstanceOf(Date);
     });
 
@@ -33,10 +34,10 @@ describe('UserService', () => {
         prenom: 'Biblio',
         email: 'admin@biblio.com',
         password: 'secret123',
-        role: 'BIBLIOTHECAIRE'
+        role: USER_ROLES.BIBLIOTHECAIRE
       });
 
-      expect(user.role).toBe('BIBLIOTHECAIRE');
+      expect(user.role).toBe(USER_ROLES.BIBLIOTHECAIRE);
     });
   });
 

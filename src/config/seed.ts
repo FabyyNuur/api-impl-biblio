@@ -1,13 +1,14 @@
 import { database } from './database';
 import { UserService } from '../services/UserService';
 import { UserRole } from '../models/User';
+import { USER_ROLES } from '../constants/roles';
 
 const DEFAULT_ADMIN = {
   nom: process.env.SEED_ADMIN_NOM || 'Admin',
   prenom: process.env.SEED_ADMIN_PRENOM || 'Bibliothèque',
   email: process.env.SEED_ADMIN_EMAIL || 'admin@biblio.com',
   password: process.env.SEED_ADMIN_PASSWORD || 'secret123',
-  role: 'BIBLIOTHECAIRE' as UserRole,
+  role: USER_ROLES.BIBLIOTHECAIRE,
 };
 
 export async function seedDefaultBibliothecaire(): Promise<boolean> {
@@ -18,7 +19,7 @@ export async function seedDefaultBibliothecaire(): Promise<boolean> {
   }
 
   const row = await database.get(
-    "SELECT COUNT(*) as count FROM users WHERE role = 'BIBLIOTHECAIRE'"
+    `SELECT COUNT(*) as count FROM users WHERE role = '${USER_ROLES.BIBLIOTHECAIRE}'`
   );
 
   if (row.count > 0) {
@@ -35,7 +36,7 @@ export async function seedDefaultBibliothecaire(): Promise<boolean> {
     return false;
   }
 
-  await userService.createUser(DEFAULT_ADMIN, 'BIBLIOTHECAIRE');
+  await userService.createUser(DEFAULT_ADMIN, USER_ROLES.BIBLIOTHECAIRE);
 
   console.log('Compte bibliothécaire par défaut créé :');
   console.log(`   Email        : ${DEFAULT_ADMIN.email}`);

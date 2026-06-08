@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { database } from '../config/database';
 import { User, CreateUserRequest, UpdateUserRequest, UserRole } from '../models/User';
+import { USER_ROLES } from '../constants/roles';
 import { AuthService } from './AuthService';
 
 export class UserService {
@@ -18,7 +19,7 @@ export class UserService {
     };
   }
 
-  async createUser(userData: CreateUserRequest, defaultRole: UserRole = 'LECTEUR'): Promise<User> {
+  async createUser(userData: CreateUserRequest, defaultRole: UserRole = USER_ROLES.LECTEUR): Promise<User> {
     const id = uuidv4();
     const dateInscription = new Date();
     const role = userData.role ?? defaultRole;

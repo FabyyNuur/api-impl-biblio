@@ -89,6 +89,22 @@ describe('EmpruntService', () => {
       expect(updatedBook?.disponible).toBe(true);
     });
 
+    it('devrait réincrémenter le stock après emprunt du dernier exemplaire', async () => {
+      const user = await createTestUser();
+      const book = await createTestBook({ nombreExemplaires: 1 });
+      const emprunt = await empruntService.createEmprunt({ utilisateurId: user.id, livreId: book.id });
+
+      const indisponible = await bookService.getBookById(book.id);
+      expect(indisponible?.nombreExemplaires).toBe(0);
+      expect(indisponible?.disponible).toBe(false);
+
+      await empruntService.returnBook(emprunt.id);
+
+      const updatedBook = await bookService.getBookById(book.id);
+      expect(updatedBook?.nombreExemplaires).toBe(1);
+      expect(updatedBook?.disponible).toBe(true);
+    });
+
     it('devrait retourner null si emprunt inexistant', async () => {
       expect(await empruntService.returnBook('inexistant')).toBeNull();
     });

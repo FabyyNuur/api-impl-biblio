@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { UserService } from '../services/UserService';
 import { CreateUserRequest, UpdateUserRequest } from '../models/User';
+import { USER_ROLES } from '../constants/roles';
 
 export class UserController {
   private userService = new UserService();
@@ -30,7 +31,7 @@ export class UserController {
       }
 
       // Seul un bibliothécaire peut créer un compte avec un rôle autre que LECTEUR
-      const role = req.user?.role === 'BIBLIOTHECAIRE' ? userData.role : 'LECTEUR';
+      const role = req.user?.role === USER_ROLES.BIBLIOTHECAIRE ? userData.role : USER_ROLES.LECTEUR;
 
       const user = await this.userService.createUser({ ...userData, role });
       res.status(201).json(user);
@@ -89,7 +90,7 @@ export class UserController {
       }
 
       // Un lecteur ne peut modifier que son propre profil (nom, prenom, email)
-      if (req.user?.role === 'LECTEUR' && req.user.id !== id) {
+      if (req.user?.role === USER_ROLES.LECTEUR && req.user.id !== id) {
         res.status(403).json({ error: 'Accès refusé' });
         return;
       }
@@ -99,7 +100,7 @@ export class UserController {
         return;
       }
 
-      if (req.user?.role === 'LECTEUR') {
+      if (req.user?.role === USER_ROLES.LECTEUR) {
         const { actif, role, ...allowedFields } = userData;
         if (actif !== undefined || role !== undefined) {
           res.status(403).json({ error: 'Vous ne pouvez pas modifier le rôle ou le statut actif' });

@@ -5,6 +5,7 @@ import empruntRoutes from './empruntRoutes';
 import authRoutes from './authRoutes';
 import { EmpruntController } from '../controllers/EmpruntController';
 import { authenticateToken, requireSelfOrRole } from '../middleware/auth';
+import { USER_ROLES } from '../constants/roles';
 
 const router = Router();
 const empruntController = new EmpruntController();
@@ -17,7 +18,7 @@ router.use('/emprunts', empruntRoutes);
 router.get(
   '/users/:userId/emprunts',
   authenticateToken,
-  requireSelfOrRole('userId', 'BIBLIOTHECAIRE'),
+  requireSelfOrRole('userId', USER_ROLES.BIBLIOTHECAIRE),
   empruntController.getEmpruntsByUserId.bind(empruntController)
 );
 
