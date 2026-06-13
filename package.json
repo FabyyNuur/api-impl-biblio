@@ -11,7 +11,8 @@
     "test:watch": "jest --watch --watchman=false",
     "test:coverage": "jest --coverage --watchman=false",
     "seed": "ts-node src/scripts/seed.ts",
-    "seed:books": "ts-node src/scripts/seed-books.ts"
+    "seed:books": "ts-node src/scripts/seed-books.ts",
+    "purge:test-data": "ts-node src/scripts/purge-test-data.ts"
   },
   "keywords": [
     "api",
