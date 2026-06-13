@@ -72,10 +72,10 @@ Une fois démarré, l'API est accessible sur :
 
 Au premier démarrage, un compte **bibliothécaire** par défaut est créé automatiquement s'il n'existe pas encore :
 
-| Champ        | Valeur par défaut   |
-|--------------|---------------------|
-| Email        | `admin@biblio.com`  |
-| Mot de passe | `secret123`         |
+| Champ        | Valeur par défaut  |
+| ------------ | ------------------ |
+| Email        | `admin@biblio.com` |
+| Mot de passe | `secret123`        |
 
 Ces valeurs sont configurables via les variables d'environnement `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, etc.
 
@@ -83,16 +83,16 @@ Ces valeurs sont configurables via les variables d'environnement `SEED_ADMIN_EMA
 
 Lorsqu'un **bibliothécaire** crée un compte sans mot de passe, l'API assigne un mot de passe par défaut (`ChangeMe123` ou variable `DEFAULT_USER_PASSWORD`) et envoie un **email** à l'utilisateur avec ses identifiants. L'utilisateur doit le changer à sa **première connexion**.
 
-| Variable | Description | Défaut |
-|----------|-------------|--------|
-| `DEFAULT_USER_PASSWORD` | Mot de passe initial pour les comptes créés par un bibliothécaire | `ChangeMe123` |
-| `SMTP_HOST` | Serveur SMTP | — |
-| `SMTP_PORT` | Port SMTP | `587` |
-| `SMTP_SECURE` | Connexion TLS directe (`true`/`false`) | `false` |
-| `SMTP_USER` | Identifiant SMTP | — |
-| `SMTP_PASS` | Mot de passe SMTP | — |
-| `MAIL_FROM` | Expéditeur des emails | `Nuur Library <noreply@biblio.local>` |
-| `FRONTEND_URL` | Lien de connexion dans l'email | `http://localhost:3001` |
+| Variable                | Description                                                       | Défaut                                |
+| ----------------------- | ----------------------------------------------------------------- | ------------------------------------- |
+| `DEFAULT_USER_PASSWORD` | Mot de passe initial pour les comptes créés par un bibliothécaire | `ChangeMe123`                         |
+| `SMTP_HOST`             | Serveur SMTP                                                      | —                                     |
+| `SMTP_PORT`             | Port SMTP                                                         | `587`                                 |
+| `SMTP_SECURE`           | Connexion TLS directe (`true`/`false`)                            | `false`                               |
+| `SMTP_USER`             | Identifiant SMTP                                                  | —                                     |
+| `SMTP_PASS`             | Mot de passe SMTP                                                 | —                                     |
+| `MAIL_FROM`             | Expéditeur des emails                                             | `Nuur Library <noreply@biblio.local>` |
+| `FRONTEND_URL`          | Lien de connexion dans l'email                                    | `http://localhost:3001`               |
 
 Copiez `.env.example` vers `.env` et renseignez vos paramètres SMTP. Sans SMTP configuré, l'email est simulé dans les logs du serveur (mode développement).
 
@@ -186,7 +186,7 @@ Les rôles **BIBLIOTHECAIRE** et **LECTEUR** contrôlent l'accès aux opération
 {
   "id": "uuid",
   "nom": "string",
-  "prenom": "string", 
+  "prenom": "string",
   "email": "string",
   "dateInscription": "datetime",
   "actif": "boolean",
@@ -271,6 +271,8 @@ Des tests d'intégration Karate sont disponibles dans le dossier `karate-tests/`
 
 **Prérequis :** Java 17+, Maven 3.8+
 
+Depuis la racine du dépôt, `mvn test` fonctionne maintenant via le POM agrégateur. Vous pouvez aussi lancer les tests depuis `karate-tests/` si vous préférez.
+
 ```bash
 # Démarrer l'API
 npm run dev
@@ -279,6 +281,9 @@ npm run dev
 ./scripts/run-karate.sh
 # ou
 cd karate-tests && mvn test
+
+# ou depuis la racine du dépôt
+mvn test
 ```
 
 Rapport HTML : `karate-tests/target/karate-reports/karate-summary.html`
@@ -313,4 +318,4 @@ tests/               # Tests unitaires Jest
 
 ---
 
-*Développé avec ❤️ par Faabynuur pour la gestion moderne de bibliothèques*
+_Développé avec ❤️ par Faabynuur pour la gestion moderne de bibliothèques_

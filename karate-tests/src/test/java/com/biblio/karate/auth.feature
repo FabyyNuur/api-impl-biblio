@@ -8,7 +8,8 @@ Feature: Authentification
   Scenario: Login avec identifiants valides
     * def lecteur = call read('classpath:com/biblio/karate/common/create-and-activate-lecteur.feature') { nom: 'Auth', prenom: 'Test', email: '#(testEmail)', password: '#(testPassword)' }
     And match lecteur.loginResult.token == '#string'
-    And match lecteur.loginResult.user.email == testEmail
+    And match lecteur.loginResult.userId == '#string'
+    And match lecteur.loginResult.userRole == 'LECTEUR'
 
   Scenario: Login avec identifiants incorrects
     * def lecteur = call read('classpath:com/biblio/karate/common/create-and-activate-lecteur.feature') { nom: 'Wrong', prenom: 'User', email: '#(testEmail)', password: '#(testPassword)' }
