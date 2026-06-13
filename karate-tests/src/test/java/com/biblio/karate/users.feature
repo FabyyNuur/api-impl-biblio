@@ -42,7 +42,7 @@ Feature: Gestion des utilisateurs
 
   Scenario: POST /api/users - rejette inscription publique avec mot de passe
     Given url baseUrl + '/api/users'
-    And request { nom: 'Public', prenom: 'User', email: 'public@test.com', password: '#(testPassword)' }
+    And request { nom: 'Public', prenom: 'User', email: '#("public-" + uniqueId + "@test.com")', password: '#(testPassword)' }
     When method post
     Then status 401
 
